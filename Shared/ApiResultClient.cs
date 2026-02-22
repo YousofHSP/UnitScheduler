@@ -10,7 +10,7 @@ public class ApiResultClient
     
 }
 
-public class ApiResultClient<T> : ApiResultClient where T : class
+public class ApiResultClient<T> : ApiResultClient 
 {
     public T Data { get; set; }
     

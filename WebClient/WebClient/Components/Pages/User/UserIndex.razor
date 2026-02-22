@@ -1,0 +1,114 @@
+@page "/User/Index"
+@using Common.Utilities
+@using WebClient.Components.Shared.Loadings
+@using global::Shared.DTOs
+@using WebClient.Components.Shared
+@rendermode InteractiveServer
+
+<PageTitle>لیست کاربران</PageTitle>
+@* <DeleteWarning OnClick="Delete"/> *@
+@* <UserModal Done="DoneForm" ModalTitle="@_modalTitle" Data="_data"/> *@
+
+@if (_isLoading)
+{
+    <LoadingList></LoadingList>
+}
+else
+{
+    <div class="flex gap-3">
+        <button class="btn btn-primary  mb-5" @onclick="ShowCreateModal">ایجاد</button>
+        <label class="input">
+            <svg class="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <g
+                    stroke-linejoin="round"
+                    stroke-linecap="round"
+                    stroke-width="2.5"
+                    fill="none"
+                    stroke="currentColor">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.3-4.3"></path>
+                </g>
+            </svg>
+            <input type="search" @oninput="OnSearchChanged" required placeholder="جسنجو"/>
+        </label>
+    </div>
+    <div class="sm:overflow-visible overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
+        <table class="table table-zebra">
+            <thead>
+            <tr>
+                <th>ردیف</th>
+                <th>پروفایل</th>
+                <th>@(ModelExtensions.ToDisplay<UserResDto>(i => i.FullName))</th>
+                <th>@(ModelExtensions.ToDisplay<UserResDto>(i => i.UserGroups))</th>
+                <th>@(ModelExtensions.ToDisplay<UserResDto>(i => i.PhoneNumber))</th>
+                <th>@(ModelExtensions.ToDisplay<UserResDto>(i => i.Enable))</th>
+                <th>عملیات</th>
+            </tr>
+            </thead>
+            <tbody class="h-full">
+            @{
+                var index = (_indexDto.Page - 1) * _indexDto.Limit;
+            }
+            @foreach (var item in _list)
+            {
+                <tr>
+                    <td class="w-14 text-center">@(++index)</td>
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <div class="avatar">
+                                <div class="mask mask-squircle h-12 w-12">
+                                    <img
+                                        src="https://img.daisyui.com/images/profile/demo/2@94.webp"
+                                        alt="Avatar Tailwind CSS Component"/>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>@item.FullName</td>
+                    <td>@item.UserGroups</td>
+                    <td>@item.FullName</td>
+                    <td>
+                        @if (!item.Enable)
+                        {
+                            <div class="inline-grid *:[grid-area:1/1]">
+                                <div class="status status-error animate-ping"></div>
+                                <div class="status status-error"></div>
+                            </div>
+                            <span>غیرفعال</span>
+                        }
+                        else
+                        {
+                            <div class="inline-grid *:[grid-area:1/1]">
+                                <div class="status status-success animate-ping"></div>
+                                <div class="status status-success"></div>
+                            </div>
+                            <span>فعال</span>
+                        }
+                    </td>
+
+                    <td class="w-14 text-center">
+                        <div class="dropdown dropdown-left">
+                            <div tabindex="0" role="button" class="btn btn-sm btn-ghost">⋮</div>
+                            <ul tabindex="0"
+                                class="dropdown-content menu bg-base-100 rounded-box z-50 p-1 w-32 shadow">
+                                <li>
+                                    <button type="button" @onclick="() => ShowEditModal(item.Id)">ویرایش</button>
+                                </li>
+                                <hr class="-mx-1 my-1">
+                                <li>
+                                    <button class="text-red-600 hover:bg-red-100" type="button"
+                                            @onclick="() => ShowDeleteWarning(item.Id)">حذف
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+            }
+
+            </tbody>
+        </table>
+    </div>
+
+    <Pagination Page="_indexDto.Page" Limit="_indexDto.Limit" Total="_total" PageChanged="PageChanged"></Pagination>
+}

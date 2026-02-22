@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Data.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class intital : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28,24 +28,6 @@ namespace Data.Migrations
                         column: x => x.ProvinceId,
                         principalTable: "Cities",
                         principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "IpRules",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Ip = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    EndIp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Cidr = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_IpRules", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -107,27 +89,6 @@ namespace Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UploadedFiles",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    SavedName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    OriginalName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MimeType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Type = table.Column<int>(type: "int", nullable: false),
-                    Enable = table.Column<bool>(type: "bit", nullable: false),
-                    ModelType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ModelId = table.Column<long>(type: "bigint", nullable: false),
-                    CreateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UploadedFiles", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -154,28 +115,6 @@ namespace Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "IpAccessTypes",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    IpRuleId = table.Column<long>(type: "bigint", nullable: false),
-                    AccessType = table.Column<int>(type: "int", nullable: false),
-                    CreateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_IpAccessTypes", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_IpAccessTypes_IpRules_IpRuleId",
-                        column: x => x.IpRuleId,
-                        principalTable: "IpRules",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -225,6 +164,57 @@ namespace Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CalendarEvents",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    StartDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDateTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DeleteDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    CreateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatorUserId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CalendarEvents", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CalendarEvents_Users_CreatorUserId",
+                        column: x => x.CreatorUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "IpRules",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Ip = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EndIp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Cidr = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatorUserId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IpRules", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_IpRules_Users_CreatorUserId",
+                        column: x => x.CreatorUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Notifications",
                 columns: table => new
                 {
@@ -235,38 +225,21 @@ namespace Data.Migrations
                     UserId = table.Column<long>(type: "bigint", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     CreateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                    UpdateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatorUserId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Notifications", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Notifications_Users_UserId",
-                        column: x => x.UserId,
+                        name: "FK_Notifications_Users_CreatorUserId",
+                        column: x => x.CreatorUserId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "RoleUsers",
-                columns: table => new
-                {
-                    RolesId = table.Column<long>(type: "bigint", nullable: false),
-                    UsersId = table.Column<long>(type: "bigint", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RoleUsers", x => new { x.RolesId, x.UsersId });
                     table.ForeignKey(
-                        name: "FK_RoleUsers_Roles_RolesId",
-                        column: x => x.RolesId,
-                        principalTable: "Roles",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_RoleUsers_Users_UsersId",
-                        column: x => x.UsersId,
+                        name: "FK_Notifications_Users_UserId",
+                        column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -300,6 +273,34 @@ namespace Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "UploadedFiles",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SavedName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    OriginalName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MimeType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Enable = table.Column<bool>(type: "bit", nullable: false),
+                    ModelType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ModelId = table.Column<long>(type: "bigint", nullable: false),
+                    CreateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatorUserId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UploadedFiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UploadedFiles_Users_CreatorUserId",
+                        column: x => x.CreatorUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserClaims",
                 columns: table => new
                 {
@@ -315,6 +316,38 @@ namespace Data.Migrations
                     table.ForeignKey(
                         name: "FK_UserClaims_Users_UserId",
                         column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserGroups",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UnitCodeId = table.Column<int>(type: "int", nullable: true),
+                    ParentUserGroupId = table.Column<int>(type: "int", nullable: true),
+                    SubSystemId = table.Column<int>(type: "int", nullable: false),
+                    DeleteDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ParentUserGroupId1 = table.Column<long>(type: "bigint", nullable: true),
+                    CreateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatorUserId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserGroups", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserGroups_UserGroups_ParentUserGroupId1",
+                        column: x => x.ParentUserGroupId1,
+                        principalTable: "UserGroups",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_UserGroups_Users_CreatorUserId",
+                        column: x => x.CreatorUserId,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -410,10 +443,121 @@ namespace Data.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "CalendarEventUsers",
+                columns: table => new
+                {
+                    CalendarEventsId = table.Column<long>(type: "bigint", nullable: false),
+                    UsersId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CalendarEventUsers", x => new { x.CalendarEventsId, x.UsersId });
+                    table.ForeignKey(
+                        name: "FK_CalendarEventUsers_CalendarEvents_CalendarEventsId",
+                        column: x => x.CalendarEventsId,
+                        principalTable: "CalendarEvents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_CalendarEventUsers_Users_UsersId",
+                        column: x => x.UsersId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "IpAccessTypes",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    IpRuleId = table.Column<long>(type: "bigint", nullable: false),
+                    AccessType = table.Column<int>(type: "int", nullable: false),
+                    CreateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdateDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    CreatorUserId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IpAccessTypes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_IpAccessTypes_IpRules_IpRuleId",
+                        column: x => x.IpRuleId,
+                        principalTable: "IpRules",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_IpAccessTypes_Users_CreatorUserId",
+                        column: x => x.CreatorUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RoleUserGroups",
+                columns: table => new
+                {
+                    RolesId = table.Column<long>(type: "bigint", nullable: false),
+                    UserGroupsId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RoleUserGroups", x => new { x.RolesId, x.UserGroupsId });
+                    table.ForeignKey(
+                        name: "FK_RoleUserGroups_Roles_RolesId",
+                        column: x => x.RolesId,
+                        principalTable: "Roles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RoleUserGroups_UserGroups_UserGroupsId",
+                        column: x => x.UserGroupsId,
+                        principalTable: "UserGroups",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserUserGroups",
+                columns: table => new
+                {
+                    UserGroupsId = table.Column<long>(type: "bigint", nullable: false),
+                    UsersId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserUserGroups", x => new { x.UserGroupsId, x.UsersId });
+                    table.ForeignKey(
+                        name: "FK_UserUserGroups_UserGroups_UserGroupsId",
+                        column: x => x.UserGroupsId,
+                        principalTable: "UserGroups",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_UserUserGroups_Users_UsersId",
+                        column: x => x.UsersId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_ApiTokens_UserId",
                 table: "ApiTokens",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CalendarEvents_CreatorUserId",
+                table: "CalendarEvents",
+                column: "CreatorUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CalendarEventUsers_UsersId",
+                table: "CalendarEventUsers",
+                column: "UsersId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Cities_ProvinceId",
@@ -421,9 +565,24 @@ namespace Data.Migrations
                 column: "ProvinceId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_IpAccessTypes_CreatorUserId",
+                table: "IpAccessTypes",
+                column: "CreatorUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_IpAccessTypes_IpRuleId",
                 table: "IpAccessTypes",
                 column: "IpRuleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_IpRules_CreatorUserId",
+                table: "IpRules",
+                column: "CreatorUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_CreatorUserId",
+                table: "Notifications",
+                column: "CreatorUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notifications_UserId",
@@ -443,9 +602,9 @@ namespace Data.Migrations
                 filter: "[NormalizedName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RoleUsers_UsersId",
-                table: "RoleUsers",
-                column: "UsersId");
+                name: "IX_RoleUserGroups_UserGroupsId",
+                table: "RoleUserGroups",
+                column: "UserGroupsId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SmsLogs_CreatorUserId",
@@ -458,9 +617,24 @@ namespace Data.Migrations
                 column: "ReceiverUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_UploadedFiles_CreatorUserId",
+                table: "UploadedFiles",
+                column: "CreatorUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserClaims_UserId",
                 table: "UserClaims",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserGroups_CreatorUserId",
+                table: "UserGroups",
+                column: "CreatorUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserGroups_ParentUserGroupId1",
+                table: "UserGroups",
+                column: "ParentUserGroupId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserInfos_UserId",
@@ -489,6 +663,11 @@ namespace Data.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserUserGroups_UsersId",
+                table: "UserUserGroups",
+                column: "UsersId");
         }
 
         /// <inheritdoc />
@@ -496,6 +675,9 @@ namespace Data.Migrations
         {
             migrationBuilder.DropTable(
                 name: "ApiTokens");
+
+            migrationBuilder.DropTable(
+                name: "CalendarEventUsers");
 
             migrationBuilder.DropTable(
                 name: "Cities");
@@ -513,7 +695,7 @@ namespace Data.Migrations
                 name: "RoleClaims");
 
             migrationBuilder.DropTable(
-                name: "RoleUsers");
+                name: "RoleUserGroups");
 
             migrationBuilder.DropTable(
                 name: "Settings");
@@ -540,10 +722,19 @@ namespace Data.Migrations
                 name: "UserTokens");
 
             migrationBuilder.DropTable(
+                name: "UserUserGroups");
+
+            migrationBuilder.DropTable(
+                name: "CalendarEvents");
+
+            migrationBuilder.DropTable(
                 name: "IpRules");
 
             migrationBuilder.DropTable(
                 name: "Roles");
+
+            migrationBuilder.DropTable(
+                name: "UserGroups");
 
             migrationBuilder.DropTable(
                 name: "Users");

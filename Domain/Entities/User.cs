@@ -16,13 +16,17 @@ public class User : IdentityUser<long>, IBaseEntity<long>
     public DateTimeOffset? DeleteDate { get; set; } = null;
     public bool Enable { get; set; }
 
-    [IgnoreDataMember] public List<Role> Roles { get; set; } = [];
+    [IgnoreDataMember] public List<UserGroup> UserGroups { get; set; } = [];
     [IgnoreDataMember] public UserInfo? Info { get; set; }
 
     [IgnoreDataMember] public List<ApiToken> ApiTokens { get; set; } = [];
     [IgnoreDataMember] public List<SmsLog> ReceivedSms { get; set; } = [];
     [IgnoreDataMember] public List<Notification> Notifications { get; set; } = [];
+    [IgnoreDataMember] public List<CalendarEvent> CalendarEvents { get; set; } = [];
+    [IgnoreDataMember] public List<CalendarEvent> CreatedCalendarEvents { get; set; } = [];
+    [IgnoreDataMember] public List<UserGroup> CreatedUserGroups { get; set; } = [];
 }
+
 
 public enum GenderType
 {
@@ -51,7 +55,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     public void Configure(EntityTypeBuilder<User> builder)
     {
         builder.Property(user => user.UserName).IsRequired().HasMaxLength(100);
-        builder.HasMany(u => u.Roles)
+        builder.HasMany(u => u.UserGroups)
             .WithMany(r => r.Users);
         builder.HasOne(u => u.Info)
             .WithOne(i => i.User)
@@ -59,6 +63,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasMany(u => u.ApiTokens)
             .WithOne(a => a.User)
             .HasForeignKey(a => a.UserId);
+        builder.HasMany(u => u.CalendarEvents)
+            .WithMany(a => a.Users);
 
         builder.HasMany(i => i.ReceivedSms)
             .WithOne(i => i.ReceiverUser)
@@ -66,6 +72,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasMany(i => i.Notifications)
             .WithOne(i => i.User)
             .HasForeignKey(i => i.UserId);
+        builder.HasMany(i => i.CreatedCalendarEvents)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedUserGroups)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
         
     }
 }

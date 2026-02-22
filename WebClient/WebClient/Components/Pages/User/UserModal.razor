@@ -1,0 +1,116 @@
+﻿@using Common
+@using Common.Utilities
+@using global::Shared.DTOs
+@using WebClient.Components.Shared.CustomeForm
+@using WebClient.Components.Shared.Loadings
+@using WebClient.Services.Common
+
+<dialog class="modal" id="dataModal">
+    <div class="modal-box w-11/12 max-w-5xl">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute left-2 top-2">✕</button>
+        </form>
+        <h3 class="text-lg font-bold">@ModalTitle</h3>
+
+        @if (_modalIsBusy)
+        {
+            <LoadingList/>
+        }
+        else
+        {
+            @* <EditForm Model="@Data" OnValidSubmit="HandleValidSubmit"> *@
+            @*     <DataAnnotationsValidator/> *@
+            @*     <div class="grid grid-cols-3 gap-4 mt-3"> *@
+            @* *@
+            @*         <fieldset class="fieldset w-full"> *@
+            @*             <legend class="fieldset-legend">@(ModelExtensions.ToDisplay<UserDto>(i => i.FullName))</legend> *@
+            @*             <InputText @bind-Value="Data.FullName" class="input" placeholder="نام و نام خانوادگی را وارد کنید"/> *@
+            @*             <ValidationMessage For="@(() => Data.FullName)"></ValidationMessage> *@
+            @*         </fieldset> *@
+            @*         <fieldset class="fieldset w-full"> *@
+            @*             <legend class="fieldset-legend">@(ModelExtensions.ToDisplay<UserDto>(i => i.BirthDate))</legend> *@
+            @*             <InputText @bind-Value="Data.BirthDate" class="input" data-jdp *@
+            @*                        placeholder="تاریخ تولد را وارد کنید"/> *@
+            @*             <ValidationMessage For="@(() => Data.BirthDate)"></ValidationMessage> *@
+            @*         </fieldset> *@
+            @*         <fieldset class="fieldset w-full"> *@
+            @*             <legend *@
+            @*                 class="fieldset-legend">@(ModelExtensions.ToDisplay<UserDto>(i => i.PhoneNumber))</legend> *@
+            @*             <InputText @bind-Value="Data.PhoneNumber" class="input" placeholder="موبایل را وارد کنید"/> *@
+            @*             <ValidationMessage For="@(() => Data.PhoneNumber)"></ValidationMessage> *@
+            @*         </fieldset> *@
+            @*         <fieldset class="fieldset w-full"> *@
+            @*             <legend class="fieldset-legend">@(ModelExtensions.ToDisplay<UserDto>(i => i.Password))</legend> *@
+            @*             <InputText @bind-Value="Data.Password" type="password" class="input" *@
+            @*                        placeholder="رمزعبور را وارد کنید"/> *@
+            @*             <ValidationMessage For="@(() => Data.Password)"></ValidationMessage> *@
+            @*         </fieldset> *@
+            @*         <fieldset class="fieldset w-full"> *@
+            @*             <legend class="fieldset-legend">@(ModelExtensions.ToDisplay<UserDto>(i => i.Email))</legend> *@
+            @*             <InputText @bind-Value="Data.Email" type="email" class="input input-error" *@
+            @*                        placeholder="ایمیل را وارد کنید"/> *@
+            @*             <ValidationMessage For="@(() => Data.Email)"></ValidationMessage> *@
+            @*         </fieldset> *@
+            @*         <fieldset class="fieldset w-full"> *@
+            @*             <legend *@
+            @*                 class="fieldset-legend">@(ModelExtensions.ToDisplay<UserDto>(i => i.UserGroupIds))</legend> *@
+            @* *@
+            @*             <MultiSelectInput TValue="@int" Values="Data.UserGroupIds" *@
+            @*                               ValuesChanged="v => Data.UserGroupIds = v" *@
+            @*                               Options="@_userGroups"/> *@
+            @*             <ValidationMessage For="@(() => Data.UserGroupIds)"></ValidationMessage> *@
+            @*         </fieldset> *@
+            @*         <fieldset class="fieldset w-full"> *@
+            @*             <legend class="fieldset-legend">@(ModelExtensions.ToDisplay<UserDto>(i => i.Enable))</legend> *@
+            @*             <SelectInput @bind-Value="Data.Enable" Options="@()"/> *@
+            @*             <ValidationMessage For="@(() => Data.Enable)"></ValidationMessage> *@
+            @*         </fieldset> *@
+            @*     </div> *@
+            @*     <div class="modal-action"> *@
+            @* *@
+            @*         <form method="dialog"> *@
+            @*             <button class="btn">بستن</button> *@
+            @*         </form> *@
+            @*         <LoadingBtn ButtonText="ثبت" CssClass="btn btn-primary" IsLoading="_isBusy" *@
+            @*                     Type="submit"></LoadingBtn> *@
+            @*     </div> *@
+            @* </EditForm> *@
+        }
+
+    </div>
+</dialog>
+
+@code{
+    private bool _modalIsBusy = true;
+    private bool _isBusy = false;
+    private List<SelectDto> _userGroups = [];
+    // [Parameter] public EventCallback Done { get; set; }
+    [Parameter] public string ModalTitle { get; set; } = "";
+    // [Parameter] public UserDto Data { get; set; } = new();
+    [Inject] public IBaseService BaseService { get; set; }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        _modalIsBusy = true;
+        await GetUserGroups();
+        _modalIsBusy = false;
+
+    }
+
+    private async Task GetUserGroups()
+    {
+        _userGroups = [];
+        var result = await BaseService.Get<List<SelectDto>>("v1/UserGroup/GetSelectList");
+        if (result is not null)
+            _userGroups = result;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        // await Done.InvokeAsync();
+
+    }
+    
+
+}

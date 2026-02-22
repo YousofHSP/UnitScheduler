@@ -117,7 +117,7 @@ namespace WebFramework.Configuration
                             }
 
 
-                            if (user.Enable)
+                            if (!user.Enable)
                             {
                                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                                 context.Fail("کاربر غیرفعال است");

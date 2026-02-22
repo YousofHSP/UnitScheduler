@@ -1,0 +1,217 @@
+@using System.Globalization
+@using global::Shared.DTOs
+@using WebClient.Services.Common
+@rendermode InteractiveServer
+
+<div class="max-w-md mx-auto  bg-white rounded-2xl shadow p-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <button class="p-2 rounded-full hover:bg-gray-200" @onclick="PrevMonth">‹</button>
+        <div class="flex items-center gap-16">
+            <div>
+                <div class="text-sm font-semibold text-gray-500">ماه</div>
+                <div class="text-xl font-bold">@PersianMonthName(CurrentMonth)</div>
+            </div>
+            <div>
+                <div class="text-sm font-semibold text-gray-500">سال</div>
+                <div class="text-xl font-bold">@CurrentYear</div>
+            </div>
+        </div>
+        <button class="p-2 rounded-full hover:bg-gray-200" @onclick="NextMonth">›</button>
+    </div>
+
+    <!-- Days of week -->
+    <div class="grid grid-cols-7 text-center text-base font-semibold text-gray-700 mb-4">
+        <div>ش</div>
+        <div>ی</div>
+        <div>د</div>
+        <div>س</div>
+        <div>چ</div>
+        <div>پ</div>
+        <div>ج</div>
+    </div>
+
+    <!-- Calendar days -->
+    <div class="grid grid-cols-7 gap-4 justify-center">
+        @foreach (var day in Days)
+        {
+            if (day.Day == 0)
+            {
+                <div></div>
+            }
+            else
+            {
+                var cssClass = "bg-gray-100 text-gray-800";
+                if(CurrentYear == NowYear && CurrentMonth == NowMonth && day.Day == NowDay)
+                    cssClass = "bg-gray-800 text-gray-100";
+                <div @onclick="() => OpenEventModal(day.Date!.Value)"
+                     class="indicator rounded-xl @cssClass  w-10 h-10 mx-auto cursor-pointer">
+
+
+                    @if (day.EventCount > 0)
+                    {
+                        <span class="indicator-item badge badge-primary badge-xs"></span>
+                    }
+                    <div class="grid place-items-center w-full font-bold">@day.Day</div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+
+<dialog class="modal" id="eventModal">
+    <div class="modal-box">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute left-2 top-2">✕</button>
+        </form>
+        <h3 class="text-lg font-bold">رویداد ها</h3>
+        <table class="table table-zebra">
+            <thead>
+            <tr>
+                <th>عنوان</th>
+                <th>توضیحات</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            @foreach (var item in _events)
+            {
+                <tr>
+                    <td>@item.Title</td>
+                    <td>@item.Description</td>
+                </tr>
+            }
+            </tbody>
+
+        </table>
+        <div class="modal-action">
+
+            <form method="dialog">
+                <button class="btn">بستن</button>
+            </form>
+        </div>
+    </div>
+
+</dialog>
+
+@code {
+
+    public record DayInfo(int Day, int EventCount, DateTime? Date);
+
+    private List<DayInfo> Days { get; set; } = new();
+    private int CurrentMonth;
+    private int CurrentYear;
+    private int NowYear;
+    private int NowMonth;
+    private int NowDay;
+    private readonly PersianCalendar pc = new PersianCalendar();
+    private List<CalendarEventResDto> _allEvents = [];
+    private List<CalendarEventResDto> _events = [];
+
+    [Inject] public IBaseService BaseService { get; set; } = null!;
+    [Inject] public IJSRuntime JS { get; set; }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadEvents();
+            LoadDays();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        var now = DateTime.Now;
+        CurrentYear = pc.GetYear(now);
+        CurrentMonth = pc.GetMonth(now);
+
+        NowYear = pc.GetYear(now);
+        NowMonth = pc.GetMonth(now);
+        NowDay = pc.GetDayOfMonth(now);
+    }
+
+    private async Task LoadEvents()
+    {
+        _allEvents = [];
+        var result = await BaseService.Get<List<CalendarEventResDto>>("v1/CalendarEvent/GetUserEvents");
+        if (result is not null)
+        {
+            _allEvents = result;
+        }
+    }
+
+    private void LoadDays()
+    {
+        Days.Clear();
+        int daysInMonth = pc.GetDaysInMonth(CurrentYear, CurrentMonth);
+
+        // روز اول ماه شمسی به میلادی
+        var firstDay = pc.ToDateTime(CurrentYear, CurrentMonth, 1, 0, 0, 0, 0);
+        int firstDayOfWeek = ((int)firstDay.DayOfWeek + 1) % 7; // شروع از شنبه
+
+        for (int i = 0; i < firstDayOfWeek; i++)
+        {
+            Days.Add(new DayInfo(0, 0, null));
+        }
+
+        for (int i = 1; i <= daysInMonth; i++)
+        {
+            var date = pc.ToDateTime(CurrentYear, CurrentMonth, i, 0, 0, 0, 0);
+            var isFriday = date.DayOfWeek == DayOfWeek.Friday;
+            var calendarEvent = _allEvents.Count(j => j.StartDateTime.Date == date.Date);
+
+            Days.Add(new DayInfo(i, calendarEvent, date));
+        }
+        StateHasChanged();
+    }
+
+    private void PrevMonth()
+    {
+        if (CurrentMonth == 1)
+        {
+            CurrentMonth = 12;
+            CurrentYear--;
+        }
+        else
+        {
+            CurrentMonth--;
+        }
+
+        LoadDays();
+    }
+
+    private void NextMonth()
+    {
+        if (CurrentMonth == 12)
+        {
+            CurrentMonth = 1;
+            CurrentYear++;
+        }
+        else
+        {
+            CurrentMonth++;
+        }
+
+        LoadDays();
+    }
+
+    private string PersianMonthName(int month)
+    {
+        string[] names =
+        {
+            "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+            "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
+        };
+        return names[month - 1];
+    }
+
+    private async Task OpenEventModal(DateTime date)
+    {
+        _events = _allEvents.Where(j => j.StartDateTime.Date == date.Date).ToList();
+        await JS.InvokeVoidAsync("openModal", "eventModal");
+    }
+
+}

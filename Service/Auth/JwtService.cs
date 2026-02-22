@@ -94,7 +94,7 @@ namespace Service.Auth
             else
             {
                 var roles = await roleRepository.TableNoTracking
-                    .Where(g => g.Users.Any(u => u.Id == user.Id))
+                    .Where(g => g.UserGroups.Any(ug => ug.Users.Any(u => u.Id == user.Id)))
                     .ToListAsync();
                 foreach (var role in roles)
                 {

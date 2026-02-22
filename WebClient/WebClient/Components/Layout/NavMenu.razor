@@ -1,29 +1,81 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">WebClient</a>
-    </div>
+﻿@using global::Shared
+@inject NavigationManager Nav
+<div id="sidebar" class="w-64 pl-2 p-4 flex flex-col">
+    <!-- لوگو -->
+    <h2 class="text-lg font-bold mb-6 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        <span>شرکت راد</span>
+    </h2>
+
+    <!-- بخش اصلی منو -->
+    <ul class="menu menu-vertical w-full gap-2">
+        <li>
+            <NavLink ActiveClass="menu-active" href="/" Match="NavLinkMatch.All" class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                     stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/>
+                </svg>
+                <span>داشبورد</span>
+            </NavLink>
+        </li>
+        @foreach (var group in MenuGroups)
+        {
+            <li class="my-1">
+                <details open="@(GroupIsActive(group) ? "open" : null)">
+                    <summary class="flex justify-between items-center">
+                        <div class="flex gap-2">
+                            <Icon Name="@group.Icon" Class="w-5 h-5"></Icon>
+                            @group.Title
+                        </div>
+                    </summary>
+                    <ul>
+                        @foreach (var item in group.Items)
+                        {
+                            <AuthorizeView Policy="@item.Policy">
+                                <Authorized>
+                                    <li class="my-1">
+                                        <NavLink ActiveClass="menu-active" href="@item.Url"
+                                                 class="flex items-center gap-2">
+                                            <Icon Name="@item.Icon" Class="w-4 h-4"></Icon>
+                                            <span>@item.Title</span>
+                                        </NavLink>
+                                    </li>
+                                </Authorized>
+                                <NotAuthorized></NotAuthorized>
+                            </AuthorizeView>
+                        }
+                    </ul>
+                </details>
+
+            </li>
+        }
+    </ul>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+@code{
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+    private List<MenuGroup> MenuGroups = [];
+    string currentUrl = "";
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+    protected override void OnInitialized()
+    {
+        MenuGroups = MenuData.GetMenu();
+        currentUrl = Nav.Uri;
+    }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
+    bool GroupIsActive(MenuGroup group)
+    {
+        foreach (var item in group.Items)
+        {
+            if (currentUrl.Contains(item.Url, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+}

@@ -34,6 +34,8 @@ public class UserDto : BaseDto<UserDto, User>
 
     [Display(Name = "رمز")]
     public string? Password { get; set; }
+
+    public List<long> UserGroupIds { get; set; } = [];
 }
 
 public class UserResDto : BaseDto<UserResDto, User>
@@ -46,11 +48,12 @@ public class UserResDto : BaseDto<UserResDto, User>
     public string Email { get; set; }
     [Display(Name = "تاریخ تولد")]
     public string BirthDate { get; set; }
-    [Display(Name = "نقش ها")]
-    public string Roles{ get; set; }
-    public List<long> RoleIds{ get; set; }
     [Display(Name = "وضعیت")]
     public bool Enable{ get; set; }
+
+    [Display(Name = "گروه")] public string UserGroups { get; set; } = "";
+    public List<long> UserGroupIds { get; set; } = [];
+
 
     protected override void CustomMappings(IMappingExpression<User, UserResDto> mapping)
     {
@@ -61,11 +64,11 @@ public class UserResDto : BaseDto<UserResDto, User>
             d => d.BirthDate,
             s => s.MapFrom(m => m.Info.BirthDate == null ? "" : m.Info.BirthDate.Value.ToShamsi(default)));
         mapping.ForMember(
-            d => d.Roles,
-            s => s.MapFrom(m => string.Join(", ", m.Roles.Select(i => i.Title))));
+            d => d.UserGroups,
+            s => s.MapFrom(m => string.Join(", ", m.UserGroups.Select(i => i.Title))));
         mapping.ForMember(
-            d => d.RoleIds,
-            s => s.MapFrom(m => m.Roles.Select(i => i.Id)));
+            d => d.UserGroupIds,
+            s => s.MapFrom(m => m.UserGroups.Select(i => i.Id)));
         base.CustomMappings(mapping);
     }
 }

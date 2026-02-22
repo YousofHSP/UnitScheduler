@@ -79,7 +79,7 @@ public class AuditInterceptor(
     public override async ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData eventData, int result,
         CancellationToken cancellationToken = new CancellationToken())
     {
-        var userId = httpContextAccessor.HttpContext?.User.Identity?.GetUserId<int>();
+        var userId = httpContextAccessor.HttpContext?.User.Identity?.GetUserId<long>();
         userId = userId == 0 ? null : userId;
         var context = eventData.Context;
         if (context == null) return await base.SavedChangesAsync(eventData, result, cancellationToken);

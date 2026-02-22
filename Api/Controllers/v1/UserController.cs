@@ -44,7 +44,8 @@ public class UserController(
     {
         query = query
             .Include(i => i.Info)
-            .Include(i => i.Roles);
+            .Include(i => i.UserGroups)
+            .ThenInclude(i => i.Roles);
         return query;
     }
 
@@ -224,14 +225,15 @@ public class UserController(
         var userId = User.Identity!.GetUserId<long>();
         var user = await repository.TableNoTracking
             .Include(i => i.Info)
+            .Include(i => i.UserGroups)
             .FirstOrDefaultAsync(i => i.Id == userId, cancellationToken);
         if (user is null)
             throw new NotFoundException("کاربر پیدا نشد");
         var profileImagePath = await uploadedFileService.GetFilePath(nameof(UserInfo), user.Info.Id,
             UploadedFileType.UserProfile, cancellationToken);
-        var roles = "";
-        if (user.Roles.Any())
-            roles = user.Roles.Select(i => i.Title).Aggregate((curr, next) => $"{curr}, {next}");
+        var userGroups = "";
+        if (user.UserGroups.Any())
+            userGroups = user.UserGroups.Select(i => i.Title).Aggregate((curr, next) => $"{curr}, {next}");
         var result = new UserProfileResDto
         {
             FullName= user.Info.FullName,
@@ -239,7 +241,7 @@ public class UserController(
             PhoneNumber = user.PhoneNumber,
             BirthDate = user.Info.BirthDate == null ? "" : user.Info.BirthDate.Value.ToShamsi(false),
             ProfileImage = profileImagePath,
-            Roles = roles
+            Roles = userGroups
         };
         return Ok(result);
     }
@@ -690,7 +692,7 @@ public class UserController(
         if (userId == 1)
             return Ok(Domain.Entities.Permissions.All.Select(i => $"{i.Controller}.{i.Action}").ToList());
         var roles = await roleRepository.TableNoTracking
-            .Where(g => g.Users.Any(u => u.Id == userId))
+            .Where(g => g.UserGroups.Any(ug => ug.Users.Any(u => u.Id == userId)))
             .ToListAsync(ct);
         var permissions = new List<string>();
         foreach (var role in roles)

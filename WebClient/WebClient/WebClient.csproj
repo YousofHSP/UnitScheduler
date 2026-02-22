@@ -12,4 +12,15 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.3"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="wwwroot\css\bpmn-font\css\bpmn-codes.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\css\bpmn-font\css\bpmn-embedded.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\css\bpmn-font\css\bpmn.css" />
+      <_ContentIncludedByDefault Remove="wwwroot\css\bpmn-font\font\bpmn.eot" />
+      <_ContentIncludedByDefault Remove="wwwroot\css\bpmn-font\font\bpmn.svg" />
+      <_ContentIncludedByDefault Remove="wwwroot\css\bpmn-font\font\bpmn.ttf" />
+      <_ContentIncludedByDefault Remove="wwwroot\css\bpmn-font\font\bpmn.woff" />
+      <_ContentIncludedByDefault Remove="wwwroot\css\bpmn-font\font\bpmn.woff2" />
+    </ItemGroup>
+
 </Project>

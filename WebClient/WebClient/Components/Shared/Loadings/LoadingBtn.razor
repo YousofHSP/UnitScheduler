@@ -1,0 +1,32 @@
+<button @onclick="HandleClick"
+        type="@Type"
+        class="btn @CssClass"
+        disabled="@(IsLoading || IsDisabled)"
+        @attributes="AdditionalAttributes">
+    @if (IsLoading)
+    {
+        <span class="loading loading-spinner"></span>
+    }
+    @ButtonText
+</button>
+
+@code {
+    [Parameter] public string ButtonText { get; set; } = "تأیید";
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public string CssClass { get; set; } = "";
+    [Parameter] public string Type { get; set; } = "button";
+    [Parameter] public bool IsDisabled { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+
+    private async Task HandleClick()
+    {
+        if (OnClick.HasDelegate)
+        {
+            await OnClick.InvokeAsync();
+        }
+    }
+}

@@ -22,6 +22,21 @@ namespace Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("CalendarEventUser", b =>
+                {
+                    b.Property<long>("CalendarEventsId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("UsersId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("CalendarEventsId", "UsersId");
+
+                    b.HasIndex("UsersId");
+
+                    b.ToTable("CalendarEventUsers");
+                });
+
             modelBuilder.Entity("Domain.Entities.ApiToken", b =>
                 {
                     b.Property<long>("Id")
@@ -61,6 +76,46 @@ namespace Data.Migrations
                     b.ToTable("ApiTokens");
                 });
 
+            modelBuilder.Entity("Domain.Entities.CalendarEvent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreateDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long>("CreatorUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("DeleteDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("EndDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("StartDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("UpdateDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.ToTable("CalendarEvents");
+                });
+
             modelBuilder.Entity("Domain.Entities.City", b =>
                 {
                     b.Property<long>("Id")
@@ -98,6 +153,9 @@ namespace Data.Migrations
                     b.Property<DateTimeOffset>("CreateDate")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<long>("CreatorUserId")
+                        .HasColumnType("bigint");
+
                     b.Property<long>("IpRuleId")
                         .HasColumnType("bigint");
 
@@ -105,6 +163,8 @@ namespace Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatorUserId");
 
                     b.HasIndex("IpRuleId");
 
@@ -125,6 +185,9 @@ namespace Data.Migrations
                     b.Property<DateTimeOffset>("CreateDate")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<long>("CreatorUserId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -140,6 +203,8 @@ namespace Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatorUserId");
 
                     b.ToTable("IpRules");
                 });
@@ -213,6 +278,9 @@ namespace Data.Migrations
                     b.Property<DateTimeOffset>("CreateDate")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<long>("CreatorUserId")
+                        .HasColumnType("bigint");
+
                     b.Property<DateTimeOffset?>("SeenDate")
                         .HasColumnType("datetimeoffset");
 
@@ -230,6 +298,8 @@ namespace Data.Migrations
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatorUserId");
 
                     b.HasIndex("UserId");
 
@@ -347,6 +417,9 @@ namespace Data.Migrations
                     b.Property<DateTimeOffset>("CreateDate")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<long>("CreatorUserId")
+                        .HasColumnType("bigint");
+
                     b.Property<bool>("Enable")
                         .HasColumnType("bit");
 
@@ -376,6 +449,8 @@ namespace Data.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatorUserId");
 
                     b.ToTable("UploadedFiles");
                 });
@@ -456,6 +531,51 @@ namespace Data.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.UserGroup", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CreateDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long>("CreatorUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("DeleteDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("ParentUserGroupId")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("ParentUserGroupId1")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SubSystemId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("UnitCodeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdateDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorUserId");
+
+                    b.HasIndex("ParentUserGroupId1");
+
+                    b.ToTable("UserGroups");
                 });
 
             modelBuilder.Entity("Domain.Entities.UserInfo", b =>
@@ -606,19 +726,49 @@ namespace Data.Migrations
                     b.ToTable("UserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("RoleUser", b =>
+            modelBuilder.Entity("RoleUserGroup", b =>
                 {
                     b.Property<long>("RolesId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("UserGroupsId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("RolesId", "UserGroupsId");
+
+                    b.HasIndex("UserGroupsId");
+
+                    b.ToTable("RoleUserGroups");
+                });
+
+            modelBuilder.Entity("UserUserGroup", b =>
+                {
+                    b.Property<long>("UserGroupsId")
                         .HasColumnType("bigint");
 
                     b.Property<long>("UsersId")
                         .HasColumnType("bigint");
 
-                    b.HasKey("RolesId", "UsersId");
+                    b.HasKey("UserGroupsId", "UsersId");
 
                     b.HasIndex("UsersId");
 
-                    b.ToTable("RoleUsers");
+                    b.ToTable("UserUserGroups");
+                });
+
+            modelBuilder.Entity("CalendarEventUser", b =>
+                {
+                    b.HasOne("Domain.Entities.CalendarEvent", null)
+                        .WithMany()
+                        .HasForeignKey("CalendarEventsId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UsersId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Domain.Entities.ApiToken", b =>
@@ -632,6 +782,17 @@ namespace Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.CalendarEvent", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "CreatorUser")
+                        .WithMany("CreatedCalendarEvents")
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatorUser");
+                });
+
             modelBuilder.Entity("Domain.Entities.City", b =>
                 {
                     b.HasOne("Domain.Entities.City", "Province")
@@ -643,22 +804,49 @@ namespace Data.Migrations
 
             modelBuilder.Entity("Domain.Entities.IpAccessType", b =>
                 {
+                    b.HasOne("Domain.Entities.User", "CreatorUser")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Domain.Entities.IpRule", "IpRule")
                         .WithMany("IpAccessTypes")
                         .HasForeignKey("IpRuleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("CreatorUser");
+
                     b.Navigation("IpRule");
+                });
+
+            modelBuilder.Entity("Domain.Entities.IpRule", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "CreatorUser")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatorUser");
                 });
 
             modelBuilder.Entity("Domain.Entities.Notification", b =>
                 {
+                    b.HasOne("Domain.Entities.User", "CreatorUser")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Domain.Entities.User", "User")
                         .WithMany("Notifications")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CreatorUser");
 
                     b.Navigation("User");
                 });
@@ -676,6 +864,34 @@ namespace Data.Migrations
                     b.Navigation("CreatorUser");
 
                     b.Navigation("ReceiverUser");
+                });
+
+            modelBuilder.Entity("Domain.Entities.UploadedFile", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "CreatorUser")
+                        .WithMany()
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatorUser");
+                });
+
+            modelBuilder.Entity("Domain.Entities.UserGroup", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "CreatorUser")
+                        .WithMany("CreatedUserGroups")
+                        .HasForeignKey("CreatorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.UserGroup", "ParentUserGroup")
+                        .WithMany()
+                        .HasForeignKey("ParentUserGroupId1");
+
+                    b.Navigation("CreatorUser");
+
+                    b.Navigation("ParentUserGroup");
                 });
 
             modelBuilder.Entity("Domain.Entities.UserInfo", b =>
@@ -740,11 +956,26 @@ namespace Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("RoleUser", b =>
+            modelBuilder.Entity("RoleUserGroup", b =>
                 {
                     b.HasOne("Domain.Entities.Role", null)
                         .WithMany()
                         .HasForeignKey("RolesId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.UserGroup", null)
+                        .WithMany()
+                        .HasForeignKey("UserGroupsId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("UserUserGroup", b =>
+                {
+                    b.HasOne("Domain.Entities.UserGroup", null)
+                        .WithMany()
+                        .HasForeignKey("UserGroupsId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -768,6 +999,10 @@ namespace Data.Migrations
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
                     b.Navigation("ApiTokens");
+
+                    b.Navigation("CreatedCalendarEvents");
+
+                    b.Navigation("CreatedUserGroups");
 
                     b.Navigation("Info");
 

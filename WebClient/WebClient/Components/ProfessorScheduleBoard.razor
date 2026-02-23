@@ -1,0 +1,30 @@
+﻿@using UnitScheduler.Models
+@using Microsoft.AspNetCore.Components
+
+<div class="professor-board-container">
+    <h4>@ProfessorSchedule.ProfessorName</h4>
+    <div class="schedule-grid" style="position:relative;min-height:@(DayRowHeight * 7)px;">
+        @for (int day = 0; day < 7; day++)
+        {
+            <div class="grid-row"
+                 style="top:@(day * DayRowHeight)px;height:@DayRowHeight}px;">
+                <span class="row-label">@((DayOfWeek)(((int)DayOfWeek.Saturday + day)%7))</span>
+            </div>
+        }
+
+        @foreach (var item in ProfessorSchedule.Items)
+        {
+            <ScheduleItem ScheduleItem="item"
+                          DayRowHeight="DayRowHeight"
+                          OnUpdate="OnScheduleItemUpdate"
+                          @key="item.Id" />
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public ProfessorScheduleDto ProfessorSchedule { get; set; }
+    [Parameter] public EventCallback<ScheduleItemDto> OnScheduleItemUpdate { get; set; }
+
+    private const int DayRowHeight = 80;
+}

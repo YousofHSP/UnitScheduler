@@ -1,0 +1,169 @@
+﻿@using UnitScheduler.Models
+@using Microsoft.AspNetCore.Components
+@inject IJSRuntime JSRuntime
+
+<div class="@($"schedule-item {(IsDragging ? "dragging" : "")}")"
+     style="
+        position:absolute;
+        left:@LeftPx;
+        top:@TopPx;
+        width:@WidthPx;
+        height:@DayRowHeight;
+        cursor:@ResizeHandleCursor;
+        z-index:@(IsDragging ? 100 : 1);
+     "
+     @onpointerdown="StartDrag"
+     @onpointerup="EndDrag">
+
+    <span>@ScheduleItem.Title</span>
+    <div class="resize-handle left" @onpointerdown="@HandleLeftResize"></div>
+    <div class="resize-handle right" @onpointerdown="@HandleRightResize"></div>
+</div>
+
+@code {
+    [Parameter] public ScheduleItemDto ScheduleItem { get; set; }
+    [Parameter] public int DayRowHeight { get; set; }
+    [Parameter] public EventCallback<ScheduleItemDto> OnUpdate { get; set; }
+
+    private const int PixelsPerHour = 60;
+    private const int PixelsPerMinute = 1;
+    private static readonly TimeOnly DayStart = new TimeOnly(7, 30);
+    private static readonly TimeOnly DayEnd = new TimeOnly(20, 30);
+    private static readonly TimeSpan SlotInterval = TimeSpan.FromMinutes(30);
+    private const int MinDurationMinutes = 30;
+
+    private double LeftPx => (ScheduleItem.StartTime.ToTimeSpan() - DayStart.ToTimeSpan()).TotalMinutes * PixelsPerMinute;
+    private double TopPx => ((int)ScheduleItem.Day - (int)DayOfWeek.Saturday) * DayRowHeight;
+    private double WidthPx => (ScheduleItem.EndTime - ScheduleItem.StartTime).TotalMinutes * PixelsPerMinute;
+
+    private bool IsDragging = false;
+    private string ResizeHandleCursor = "pointer";
+    private DragType CurrentDragType = DragType.None;
+    private double DragStartX, DragStartY;
+    private TimeOnly OrigStartTime, OrigEndTime;
+    private DayOfWeek OrigDay;
+
+    enum DragType { None, Move, ResizeLeft, ResizeRight }
+
+    private async void StartDrag(PointerEventArgs e)
+    {
+        IsDragging = true;
+        DragStartX = e.ClientX;
+        DragStartY = e.ClientY;
+        OrigStartTime = ScheduleItem.StartTime;
+        OrigEndTime = ScheduleItem.EndTime;
+        OrigDay = ScheduleItem.Day;
+        CurrentDragType = DragType.Move;
+
+        ResizeHandleCursor = "move";
+        StateHasChanged();
+
+        await JSRuntime.InvokeVoidAsync("scheduleDrag.attach", DotNetObjectReference.Create(this));
+    }
+
+    private void EndDrag(PointerEventArgs e)
+    {
+        if (!IsDragging) return;
+
+        IsDragging = false;
+        CurrentDragType = DragType.None;
+        ResizeHandleCursor = "pointer";
+        OnUpdate.InvokeAsync(ScheduleItem);
+        StateHasChanged();
+    }
+
+    private async void HandleLeftResize(PointerEventArgs e)
+    {
+        IsDragging = true;
+        DragStartX = e.ClientX;
+        DragStartY = e.ClientY;
+        OrigStartTime = ScheduleItem.StartTime;
+        OrigEndTime = ScheduleItem.EndTime;
+        OrigDay = ScheduleItem.Day;
+        CurrentDragType = DragType.ResizeLeft;
+
+        ResizeHandleCursor = "ew-resize";
+        StateHasChanged();
+
+        await JSRuntime.InvokeVoidAsync("scheduleDrag.attach", DotNetObjectReference.Create(this));
+    }
+
+    private async void HandleRightResize(PointerEventArgs e)
+    {
+        IsDragging = true;
+        DragStartX = e.ClientX;
+        DragStartY = e.ClientY;
+        OrigStartTime = ScheduleItem.StartTime;
+        OrigEndTime = ScheduleItem.EndTime;
+        OrigDay = ScheduleItem.Day;
+        CurrentDragType = DragType.ResizeRight;
+
+        ResizeHandleCursor = "ew-resize";
+        StateHasChanged();
+
+        await JSRuntime.InvokeVoidAsync("scheduleDrag.attach", DotNetObjectReference.Create(this));
+    }
+
+    [JSInvokable]
+    public void OnDrag(double deltaX, double deltaY)
+    {
+        if (!IsDragging) return;
+
+        switch (CurrentDragType)
+        {
+            case DragType.Move:
+                {
+                    // Horizontal: start time
+                    int minutesDelta = (int)Math.Round(deltaX / PixelsPerMinute);
+                    var newStartMinutes = OrigStartTime.ToTimeSpan().TotalMinutes + minutesDelta;
+
+                    newStartMinutes = Math.Max(DayStart.ToTimeSpan().TotalMinutes, newStartMinutes);
+                    var maxEnd = DayEnd.ToTimeSpan().TotalMinutes - (OrigEndTime - OrigStartTime).TotalMinutes;
+                    newStartMinutes = Math.Min(maxEnd, newStartMinutes);
+
+                    // Snap to 30 min
+                    newStartMinutes = Math.Round(newStartMinutes / SlotInterval.TotalMinutes) * SlotInterval.TotalMinutes;
+                    var newStart = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(newStartMinutes));
+                    var newEnd = newStart.Add(OrigEndTime - OrigStartTime);
+
+                    ScheduleItem.StartTime = newStart;
+                    ScheduleItem.EndTime = newEnd;
+
+                    // Vertical: Day row
+                    int dayDelta = (int)Math.Round(deltaY / DayRowHeight);
+                    var dayInt = ((int)OrigDay) + dayDelta;
+                    dayInt = Math.Max((int)DayOfWeek.Saturday, dayInt);
+                    dayInt = Math.Min((int)DayOfWeek.Friday, dayInt);
+
+                    ScheduleItem.Day = (DayOfWeek)dayInt;
+                }
+                break;
+            case DragType.ResizeLeft:
+                {
+                    int minutesDelta = (int)Math.Round(deltaX / PixelsPerMinute);
+                    var newStartMinutes = OrigStartTime.ToTimeSpan().TotalMinutes + minutesDelta;
+                    newStartMinutes = Math.Max(DayStart.ToTimeSpan().TotalMinutes, newStartMinutes);
+                    newStartMinutes = Math.Min(ScheduleItem.EndTime.ToTimeSpan().TotalMinutes - MinDurationMinutes, newStartMinutes);
+
+                    newStartMinutes = Math.Round(newStartMinutes / SlotInterval.TotalMinutes) * SlotInterval.TotalMinutes;
+                    var newStart = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(newStartMinutes));
+                    ScheduleItem.StartTime = newStart;
+                    ScheduleItem.EndTime = OrigEndTime;
+                }
+                break;
+            case DragType.ResizeRight:
+                {
+                    int minutesDelta = (int)Math.Round(deltaX / PixelsPerMinute);
+                    var newEndMinutes = OrigEndTime.ToTimeSpan().TotalMinutes + minutesDelta;
+                    newEndMinutes = Math.Min(DayEnd.ToTimeSpan().TotalMinutes, newEndMinutes);
+                    newEndMinutes = Math.Max(ScheduleItem.StartTime.ToTimeSpan().TotalMinutes + MinDurationMinutes, newEndMinutes);
+
+                    newEndMinutes = Math.Round(newEndMinutes / SlotInterval.TotalMinutes) * SlotInterval.TotalMinutes;
+                    var newEnd = TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(newEndMinutes));
+                    ScheduleItem.EndTime = newEnd;
+                }
+                break;
+        }
+        StateHasChanged();
+    }
+}

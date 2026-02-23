@@ -1,0 +1,39 @@
+﻿@page "/professors-schedule"
+@inject UnitScheduler.Services.ISchedulingFrontendService SchedulingFrontendService
+
+@using UnitScheduler.Models
+
+<PageTitle>Professors Schedule</PageTitle>
+
+@if (Schedules == null)
+{
+    <div>Loading...</div>
+}
+else
+{
+    <div class="schedules-grid">
+        @foreach (var professor in Schedules)
+        {
+            <ProfessorScheduleBoard ProfessorSchedule="professor"
+                                    OnScheduleItemUpdate="HandleScheduleItemUpdate"
+                                    @key="professor.ProfessorId" />
+        }
+    </div>
+}
+
+@code {
+    private List<ProfessorScheduleDto> Schedules;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Schedules = await SchedulingFrontendService.GetAllProfessorSchedulesAsync();
+    }
+
+    private async Task HandleScheduleItemUpdate(ScheduleItemDto changedItem)
+    {
+        await SchedulingFrontendService.UpdateScheduleAsync(changedItem);
+        // Refresh from backend to ensure latest data
+        Schedules = await SchedulingFrontendService.GetAllProfessorSchedulesAsync();
+        StateHasChanged();
+    }
+}

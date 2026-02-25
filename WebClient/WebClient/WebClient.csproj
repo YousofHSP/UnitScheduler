@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\WebClient.Client\WebClient.Client.csproj"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.3"/>
+        <ProjectReference Include="..\WebClient.Client\WebClient.Client.csproj" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.3" />
     </ItemGroup>
 
     <ItemGroup>

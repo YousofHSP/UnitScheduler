@@ -1,0 +1,76 @@
+﻿.schedules-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+@media (max-width: 800px) {
+    .schedules-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.professor-board-container {
+    background: #fafafa;
+    border: 1px solid #dedede;
+    border-radius: 12px;
+    padding: 18px;
+}
+
+.schedule-grid {
+    width: 100%;
+    min-height: 560px;
+    position: relative;
+}
+
+.grid-row {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    border-bottom: 1px solid #ececec;
+    height: 80px;
+    background: transparent;
+}
+
+.row-label {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    font-size: 12px;
+    color: #888;
+}
+
+.schedule-item {
+    background: #6b5ae5;
+    color: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(107,90,229,0.10);
+    padding: 8px 12px;
+    transition: box-shadow .25s;
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+}
+
+    .schedule-item.dragging {
+        box-shadow: 0 4px 16px rgba(107,90,229,0.35);
+        border: 2px solid #7ed9ff;
+    }
+
+.resize-handle {
+    width: 8px;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    z-index: 2;
+}
+
+    .resize-handle.left {
+        left: 0;
+        cursor: ew-resize;
+    }
+
+    .resize-handle.right {
+        right: 0;
+        cursor: ew-resize;
+    }

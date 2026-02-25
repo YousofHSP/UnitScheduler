@@ -80,6 +80,7 @@ builder.Services.AddServerSideBlazor()
     .AddCircuitOptions(op => { op.DetailedErrors = true; });
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+// builder.Services.AddScoped<ISchedulingFrontendService, MockSchedulingFrontendService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

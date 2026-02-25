@@ -12,6 +12,8 @@ using NLog.Web;
 using Scalar.AspNetCore;
 using Service.Auth;
 using Service.DataInitializer;
+using Service.Engine;
+using Service.Engine.Contract;
 using Service.Message;
 using Service.Model;
 using Service.Model.Contracts;
@@ -55,6 +57,7 @@ try
     builder.Services.AddScoped<IEmailService, SmtpEmailService>();
     builder.Services.AddScoped<IMessageService, KavehNegarMessageService>();
     builder.Services.AddScoped<INotificationService, NotificationService>();
+    builder.Services.AddScoped<IEngineService, EngineService>();
     
     
     builder.Services.AddScoped<IDataInitializer, CityDataInitializer>();

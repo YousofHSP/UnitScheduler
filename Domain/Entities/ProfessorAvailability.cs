@@ -1,35 +1,26 @@
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
+using Domain.Entities.Common;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Domain.Entities;
 
-    public class ProfessorAvailability : IEntity<int>
+    public class ProfessorAvailability : BaseEntity
     {
-        public int ProfessorId { get; set; }
-        public int UniversityId { get; set; }
+        public long ProfessorId { get; set; }
+        public long UniversityId { get; set; }
         public DayOfWeek DayOfWeek { get; set; } // 0 = Saturday, 6 = Friday
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan EndTime { get; set; }
-        [IgnoreDataMember] public Professor Professor { get; set; }
-        [IgnoreDataMember] public University University { get; set; }
+        public int StartMinutes{ get; set; }
+        public int EndMinutes{ get; set; }
+        [IgnoreDataMember] public Professor Professor { get; set; } = null!;
+        [IgnoreDataMember] public University University { get; set; } = null;
     }
 
 public class ProfessorAvailabilityConfiguration : IEntityTypeConfiguration<ProfessorAvailability>
 {
     public void Configure(EntityTypeBuilder<ProfessorAvailability> builder)
     {
-        builder.ToTable("ProfessorAvailabilities");
-        
-        builder.HasKey(pa => pa.Id);
-        
-        builder.Property(pa => pa.DayOfWeek)
-            .IsRequired();
-            
-        builder.Property(pa => pa.StartTime)
-            .IsRequired();
-            
-        builder.Property(pa => pa.EndTime)
-            .IsRequired();
             
         builder.HasOne(pa => pa.Professor)
             .WithMany(p => p.Availabilities)
@@ -40,7 +31,9 @@ public class ProfessorAvailabilityConfiguration : IEntityTypeConfiguration<Profe
             .WithMany()
             .HasForeignKey(pa => pa.UniversityId)
             .OnDelete(DeleteBehavior.Restrict);
-            
-        builder.HasIndex(pa => pa.ProfessorId);
+
+        builder.HasOne(i => i.CreatorUser)
+            .WithMany(i => i.CreatedProfessorAvailabilities)
+            .HasForeignKey(i => i.CreatorUserId);
     }
 }

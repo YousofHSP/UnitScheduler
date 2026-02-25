@@ -25,6 +25,19 @@ public class User : IdentityUser<long>, IBaseEntity<long>
     [IgnoreDataMember] public List<CalendarEvent> CalendarEvents { get; set; } = [];
     [IgnoreDataMember] public List<CalendarEvent> CreatedCalendarEvents { get; set; } = [];
     [IgnoreDataMember] public List<UserGroup> CreatedUserGroups { get; set; } = [];
+    [IgnoreDataMember] public List<Assignment> CreatedAssignments { get; set; } = [];
+    [IgnoreDataMember] public List<CourseOffering> CreatedCourseOfferings { get; set; } = [];
+    [IgnoreDataMember] public List<Course> CreatedCourses{ get; set; } = [];
+    [IgnoreDataMember] public List<DegreeLevel> CreatedDegreeLevels { get; set; } = [];
+    [IgnoreDataMember] public List<Field> CreatedFields { get; set; } = [];
+    [IgnoreDataMember] public List<Professor> CreatedProfessors { get; set; } = [];
+    [IgnoreDataMember] public List<ProfessorAvailability> CreatedProfessorAvailabilities { get; set; } = [];
+    [IgnoreDataMember] public List<ProfessorPresence> CreatedProfessorPresences { get; set; } = [];
+    [IgnoreDataMember] public List<ProfessorSkill> CreatedProfessorSkills { get; set; } = [];
+    [IgnoreDataMember] public List<Room> CreatedRooms { get; set; } = [];
+    [IgnoreDataMember] public List<Term> CreatedTerms { get; set; } = [];
+    [IgnoreDataMember] public List<TimeSlot> CreatedTimeSlots { get; set; } = [];
+    [IgnoreDataMember] public List<University> CreatedUniversities { get; set; } = [];
 }
 
 
@@ -76,6 +89,45 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .WithOne(i => i.CreatorUser)
             .HasForeignKey(i => i.CreatorUserId);
         builder.HasMany(i => i.CreatedUserGroups)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedAssignments)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedCourseOfferings)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedCourses)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedDegreeLevels)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedFields)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedProfessors)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedProfessorAvailabilities)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedProfessorPresences)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedProfessorSkills)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedRooms)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedTerms)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedTimeSlots)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedUniversities)
             .WithOne(i => i.CreatorUser)
             .HasForeignKey(i => i.CreatorUserId);
         

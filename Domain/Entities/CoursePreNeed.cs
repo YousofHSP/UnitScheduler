@@ -1,3 +1,4 @@
+/*
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 
@@ -33,3 +34,4 @@ public class CoursePreNeedConfiguration : IEntityTypeConfiguration<CoursePreNeed
         builder.HasIndex(cpn => new { cpn.CourseId, cpn.PreNeedCourseId }).IsUnique();
     }
 }
+*/

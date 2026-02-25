@@ -1,34 +1,35 @@
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
+using Domain.Entities.Common;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Domain.Entities;
 
-    public class Assignment : IEntity<int>
+    public class Assignment : BaseEntity
     {
-        public int CourseOfferingId { get; set; }
-        public int ProfessorId { get; set; }
-        public int RoomId { get; set; }
-        public int TimeSlotId { get; set; }
+        public long CourseOfferingId { get; set; }
+        public long ProfessorId { get; set; }
+        public long RoomId { get; set; }
+        public long TimeSlotId { get; set; }
         public int? Score { get; set; } // optional penalty or quality measure
 
         // Navigation
-        [IgnoreDataMember] public CourseOffering CourseOffering { get; set; }
-        [IgnoreDataMember] public Professor Professor { get; set; }
-        [IgnoreDataMember] public Room Room { get; set; }
-        [IgnoreDataMember] public TimeSlot TimeSlot { get; set; }
+        [IgnoreDataMember] public CourseOffering CourseOffering { get; set; } = null!;
+        [IgnoreDataMember] public Professor Professor { get; set; } = null!;
+        [IgnoreDataMember] public Room Room { get; set; } = null!;
+        [IgnoreDataMember] public TimeSlot TimeSlot { get; set; } = null!;
     }
 
 public class AssignmentConfiguration : IEntityTypeConfiguration<Assignment>
 {
     public void Configure(EntityTypeBuilder<Assignment> builder)
     {
-        builder.ToTable("Assignments");
-        
-        builder.HasKey(a => a.Id);
-        
-        builder.Property(a => a.Score)
-            .HasDefaultValue(null);
-            
+
+
+        builder.HasOne(i => i.CreatorUser)
+            .WithMany(i => i.CreatedAssignments)
+            .HasForeignKey(i => i.CreatorUserId);
         builder.HasOne(a => a.CourseOffering)
             .WithMany(co => co.Assignments)
             .HasForeignKey(a => a.CourseOfferingId)
@@ -49,8 +50,5 @@ public class AssignmentConfiguration : IEntityTypeConfiguration<Assignment>
             .HasForeignKey(a => a.TimeSlotId)
             .OnDelete(DeleteBehavior.Restrict);
             
-        builder.HasIndex(a => new { a.CourseOfferingId });
-        builder.HasIndex(a => new { a.ProfessorId, a.TimeSlotId }).IsUnique();
-        builder.HasIndex(a => new { a.RoomId, a.TimeSlotId }).IsUnique();
     }
 }

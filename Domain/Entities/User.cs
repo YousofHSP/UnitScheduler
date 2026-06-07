@@ -32,12 +32,12 @@ public class User : IdentityUser<long>, IBaseEntity<long>
     [IgnoreDataMember] public List<Field> CreatedFields { get; set; } = [];
     [IgnoreDataMember] public List<Professor> CreatedProfessors { get; set; } = [];
     [IgnoreDataMember] public List<ProfessorAvailability> CreatedProfessorAvailabilities { get; set; } = [];
-    [IgnoreDataMember] public List<ProfessorPresence> CreatedProfessorPresences { get; set; } = [];
     [IgnoreDataMember] public List<ProfessorSkill> CreatedProfessorSkills { get; set; } = [];
     [IgnoreDataMember] public List<Room> CreatedRooms { get; set; } = [];
     [IgnoreDataMember] public List<Term> CreatedTerms { get; set; } = [];
     [IgnoreDataMember] public List<TimeSlot> CreatedTimeSlots { get; set; } = [];
     [IgnoreDataMember] public List<University> CreatedUniversities { get; set; } = [];
+    [IgnoreDataMember] public List<CombinedCourseGroup> CreatedCombinedCourseGroups { get; set; } = [];
 }
 
 
@@ -112,9 +112,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasMany(i => i.CreatedProfessorAvailabilities)
             .WithOne(i => i.CreatorUser)
             .HasForeignKey(i => i.CreatorUserId);
-        builder.HasMany(i => i.CreatedProfessorPresences)
-            .WithOne(i => i.CreatorUser)
-            .HasForeignKey(i => i.CreatorUserId);
         builder.HasMany(i => i.CreatedProfessorSkills)
             .WithOne(i => i.CreatorUser)
             .HasForeignKey(i => i.CreatorUserId);
@@ -128,6 +125,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .WithOne(i => i.CreatorUser)
             .HasForeignKey(i => i.CreatorUserId);
         builder.HasMany(i => i.CreatedUniversities)
+            .WithOne(i => i.CreatorUser)
+            .HasForeignKey(i => i.CreatorUserId);
+        builder.HasMany(i => i.CreatedCombinedCourseGroups)
             .WithOne(i => i.CreatorUser)
             .HasForeignKey(i => i.CreatorUserId);
         

@@ -9,8 +9,8 @@ public class TimeSlot : BaseEntity
 {
         public long UniversityId { get; set; }
         public DayOfWeek DayOfWeek { get; set; }
-        public int StartMinute { get; set; } // minutes from midnight
-        public int EndMinute { get; set; }
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly EndTime { get; set; }
 
         [IgnoreDataMember] public University University { get; set; } = null!;
         [IgnoreDataMember] public List<Assignment> Assignments { get; set; } = [];

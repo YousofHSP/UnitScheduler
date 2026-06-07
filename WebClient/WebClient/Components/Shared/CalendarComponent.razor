@@ -135,12 +135,12 @@
 
     private async Task LoadEvents()
     {
-        _allEvents = [];
-        var result = await BaseService.Get<List<CalendarEventResDto>>("v1/CalendarEvent/GetUserEvents");
-        if (result is not null)
-        {
-            _allEvents = result;
-        }
+        // _allEvents = [];
+        // var result = await BaseService.Get<List<CalendarEventResDto>>("v1/CalendarEvent/GetUserEvents");
+        // if (result is not null)
+        // {
+        //     _allEvents = result;
+        // }
     }
 
     private void LoadDays()

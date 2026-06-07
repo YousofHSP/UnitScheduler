@@ -9,8 +9,8 @@ public class UserGroup : BaseEntity, ISoftDelete
 {
     public string Title { get; set; }
     public int? UnitCodeId { get; set; }
-    public int? ParentUserGroupId { get; set; }
-    public int SubSystemId { get; set; }
+    public long? ParentUserGroupId { get; set; }
+    public long SubSystemId { get; set; }
 
     public DateTimeOffset? DeleteDate { get; set; }
 

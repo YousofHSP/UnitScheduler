@@ -11,6 +11,7 @@ namespace Domain.Entities;
         public string Title { get; set; } // e.g., "کارشناسی"
 
         [IgnoreDataMember] public List<CourseOffering> CourseOfferings { get; set; } = []; 
+        [IgnoreDataMember] public List<Course> Courses { get; set; } = []; 
     }
 
 public class DegreeLevelConfiguration : IEntityTypeConfiguration<DegreeLevel>
@@ -20,7 +21,7 @@ public class DegreeLevelConfiguration : IEntityTypeConfiguration<DegreeLevel>
         builder.HasOne(i => i.CreatorUser)
             .WithMany(i => i.CreatedDegreeLevels)
             .HasForeignKey(i => i.CreatorUserId);
-        builder.HasMany(i => i.CourseOfferings)
+        builder.HasMany(i => i.Courses)
             .WithOne(i => i.DegreeLevel)
             .HasForeignKey(i => i.DegreeLevelId);
 

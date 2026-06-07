@@ -11,16 +11,16 @@
       <ProjectReference Include="..\Service\Service.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Asp.Versioning.Http" Version="8.1.1" />
-        <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.1" />
-        <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.1" />
+        <PackageReference Include="Asp.Versioning.Http" Version="10.0.0" />
+        <PackageReference Include="Asp.Versioning.Mvc" Version="10.0.0" />
+        <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="10.0.0" />
         <PackageReference Include="Hangfire" Version="1.8.23" />
         <PackageReference Include="Hangfire.SqlServer" Version="1.8.23" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
-        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="10.0.3" />
-        <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="2.3.9" />
-        <PackageReference Include="Microsoft.AspNetCore.HttpsPolicy" Version="2.3.9" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
+        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="10.0.8" />
+        <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="2.3.10" />
+        <PackageReference Include="Microsoft.AspNetCore.HttpsPolicy" Version="2.3.10" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
     </ItemGroup>
 </Project>

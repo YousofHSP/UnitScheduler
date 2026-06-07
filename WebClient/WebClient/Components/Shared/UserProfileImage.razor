@@ -19,12 +19,12 @@
     private string? _profileImage;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var result = await BaseService.Get<UserProfileResDto>("v1/User/GetProfile");
-
-        if (result is not null)
-        {
-            _profileImage = result.ProfileImage;
-        }
+        // var result = await BaseService.Get<UserProfileResDto>("v1/User/GetProfile");
+        //
+        // if (result is not null)
+        // {
+        //     _profileImage = result.ProfileImage;
+        // }
     }
     
 }

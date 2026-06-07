@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Common.Exceptions;
+﻿using Common.Exceptions;
 using Microsoft.AspNetCore.Hosting;
 using Service.Reports.Contracts;
 using Xceed.Document.NET;
@@ -25,7 +20,7 @@ namespace Service.Reports
 
             string templatePath = Path.Combine(_env.WebRootPath, "Templates", "Template.docx");
 
-            if (!System.IO.File.Exists(templatePath))
+            if (!File.Exists(templatePath))
                 throw new NotFoundException("قالب Word پیدا نشد.");
 
             var products = new List<(string Name, int Qty, decimal Price)>

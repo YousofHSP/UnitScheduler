@@ -40,12 +40,12 @@ try
         options.Filters.Add(new AuthorizeFilter());
         options.Filters.Add<LogActionExecutionAttribute>();
     });
-    
+
     builder.Services.AddDbContext(builder.Configuration);
     builder.Services.AddMemoryCache();
     builder.Services.AddCustomIdentity(siteSettings.IdentitySettings);
-    
-    
+
+
     builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
     builder.Services.AddScoped<IExcelExport, ExcelExport>();
     builder.Services.AddScoped<IWordReportService, WordReportService>();
@@ -57,17 +57,27 @@ try
     builder.Services.AddScoped<IEmailService, SmtpEmailService>();
     builder.Services.AddScoped<IMessageService, KavehNegarMessageService>();
     builder.Services.AddScoped<INotificationService, NotificationService>();
-    builder.Services.AddScoped<IEngineService, EngineService>();
-    
-    
+    builder.Services.AddScoped<IScheduleGenerationService, ScheduleGenerationService>();
+    builder.Services.AddScoped<ScheduleInputBuilder>();
+    builder.Services.AddScoped<OrToolsScheduleSolver>();
+
+
     builder.Services.AddScoped<IDataInitializer, CityDataInitializer>();
     builder.Services.AddScoped<IDataInitializer, RoleDataInitializer>();
     builder.Services.AddScoped<IDataInitializer, UserDataInitializer>();
     builder.Services.AddScoped<IDataInitializer, SettingDataInitializer>();
-    
-    
+    builder.Services.AddScoped<IDataInitializer, UniversityDataInitializer>();
+    builder.Services.AddScoped<IDataInitializer, FieldDataInitializer>();
+    builder.Services.AddScoped<IDataInitializer, CourseDataInitializer>();
+    builder.Services.AddScoped<IDataInitializer, ProfessorDataInitializer>();
+    builder.Services.AddScoped<IDataInitializer, TimeSlotDataInitializer>();
+    // builder.Services.AddScoped<IDataInitializer, CourseOfferingDataInitializer>();
+
+
+
+
     builder.Services.AddJwtAuthentication();
-    
+
     builder.Logging.ClearProviders();
     builder.Host.UseNLog(new NLogAspNetCoreOptions
     {
@@ -80,11 +90,9 @@ try
     builder.Services.AddCustomApiVersioning();
     builder.Services.AddCorsService();
     builder.Services.AddSignalR();
-    
-    builder.Services.AddHttpClient("KavehNegar", client =>
-    {
-        client.BaseAddress = new Uri("https://api.kavenegar.com/v1/");
-    });
+
+    builder.Services.AddHttpClient("KavehNegar",
+        client => { client.BaseAddress = new Uri("https://api.kavenegar.com/v1/"); });
 
     builder.Services.AddOpenApiCustome();
 
@@ -99,20 +107,20 @@ try
             options.AddDocument("v1");
         });
     }
-    
+
     app.Use(async (context, next) =>
     {
         var ip = context.Connection.RemoteIpAddress?.ToString() ?? "";
         var userAgent = context.Request.Headers["User-Agent"].ToString();
         var requestId = context.TraceIdentifier;
         var physicalPath = context?.Request.Path ?? "";
-    
+
         ScopeContext.PushProperty("ipAddress", ip);
         ScopeContext.PushProperty("userAgent", userAgent);
         ScopeContext.PushProperty("requestId", requestId);
         ScopeContext.PushProperty("physicalPath", physicalPath);
-    
-    
+
+
         await next();
     });
 
@@ -128,10 +136,10 @@ try
         var userName = context.User.Identity.IsAuthenticated
             ? context.User.Identity.GetUserName()
             : "Anonymous";
-    
+
         ScopeContext.PushProperty("userName", userName);
-    
-    
+
+
         await next();
     });
     app.MapControllers();
@@ -140,7 +148,6 @@ try
     app.UseCustomExceptionHandler();
 
     app.Run();
-
 }
 catch (Exception e)
 {

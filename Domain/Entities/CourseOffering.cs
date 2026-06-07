@@ -10,8 +10,6 @@ namespace Domain.Entities;
     {
         public long CourseId { get; set; }
         public long UniversityId { get; set; }
-        public long FieldId { get; set; }
-        public long DegreeLevelId { get; set; }
         public long TermId { get; set; }
         public int StudentCount { get; set; }
         public int GroupNumber { get; set; }  // added: parallel group identifier
@@ -19,10 +17,9 @@ namespace Domain.Entities;
         // Navigation
         [IgnoreDataMember] public Course Course { get; set; } = null!;
         [IgnoreDataMember] public University University { get; set; } = null!;
-        [IgnoreDataMember] public Field Field { get; set; } = null!;
-        [IgnoreDataMember] public DegreeLevel DegreeLevel { get; set; } = null!;
         [IgnoreDataMember] public Term Term { get; set; } = null!;
-        [IgnoreDataMember] public List<Assignment> Assignments { get; set; } = null!;
+        [IgnoreDataMember] public List<CombinedCourseGroup> CombinedCourseGroups{ get; set; } = [];
+        [IgnoreDataMember] public List<Assignment> Assignments { get; set; } = [];
         
     }   
 
@@ -43,20 +40,14 @@ public class CourseOfferingConfiguration : IEntityTypeConfiguration<CourseOfferi
             .HasForeignKey(co => co.UniversityId)
             .OnDelete(DeleteBehavior.Restrict);
             
-        builder.HasOne(co => co.Field)
-            .WithMany(f => f.CourseOfferings)
-            .HasForeignKey(co => co.FieldId)
-            .OnDelete(DeleteBehavior.Restrict);
-            
-        builder.HasOne(co => co.DegreeLevel)
-            .WithMany(d => d.CourseOfferings)
-            .HasForeignKey(co => co.DegreeLevelId)
-            .OnDelete(DeleteBehavior.Restrict);
-            
         builder.HasOne(co => co.Term)
             .WithMany(t => t.CourseOfferings)
             .HasForeignKey(co => co.TermId)
             .OnDelete(DeleteBehavior.Restrict);
-            
+        builder.HasMany(i => i.Assignments)
+            .WithOne(i => i.CourseOffering)
+            .HasForeignKey(i => i.CourseOfferingId);
+        builder.HasMany(i => i.CombinedCourseGroups)
+            .WithMany(c => c.CourseOfferings);
     }
 }

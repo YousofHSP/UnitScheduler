@@ -10,6 +10,18 @@ namespace Common.Utilities
 {
     public static class EnumExtensions
     {
+        private static readonly Dictionary<DayOfWeek, string> _persianDays = new()
+        {
+            { DayOfWeek.Saturday, "شنبه" },
+            { DayOfWeek.Sunday, "یکشنبه" },
+            { DayOfWeek.Monday, "دوشنبه" },
+            { DayOfWeek.Tuesday, "سه‌شنبه" },
+            { DayOfWeek.Wednesday, "چهارشنبه" },
+            { DayOfWeek.Thursday, "پنج‌شنبه" },
+            { DayOfWeek.Friday, "جمعه" }
+        };
+
+        public static string ToPersian(this DayOfWeek day) => _persianDays[day];
         public static IEnumerable<T> GetEnumValues<T>(this T input) where T : struct
         {
             if (!typeof(T).IsEnum)
@@ -25,7 +37,7 @@ namespace Common.Utilities
             if (!typeof(T).IsEnum)
                 throw new NotSupportedException();
             foreach (var value in Enum.GetValues(input.GetType()))
-                if ((input as Enum).HasFlag(value as Enum))
+                if ((input as System.Enum).HasFlag(value as Enum))
                     yield return (T)value;
         }
 

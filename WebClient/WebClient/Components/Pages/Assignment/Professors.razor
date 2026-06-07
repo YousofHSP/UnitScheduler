@@ -1,0 +1,95 @@
+﻿@page "/Assignment/Professors"
+@using Common.Utilities
+@using global::Shared.DTOs
+@using WebClient.Components.Shared.Loadings
+@using WebClient.Services.Common
+@rendermode InteractiveServer
+
+<div class="p-6">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-2xl font-bold text-base-content">لیست دروس اساتید - ترم جاری</h1>
+        <div class="badge badge-primary badge-outline p-4">@_allAssignments.Count درس ارائه شده</div>
+    </div>
+
+    @if (_isLoading)
+    {
+        <LoadingList />
+    }
+    else if (!_groupedAssignments.Any())
+    {
+        <div class="alert alert-info">داده‌ای برای نمایش یافت نشد.</div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            @foreach (var kvp in _groupedAssignments)
+            {
+                var professorName = kvp.Value.FirstOrDefault()?.ProfessorFullName ?? "استاد نامشخص";
+                
+                <div class="card bg-base-100 shadow-xl border border-base-200">
+                    <div class="card-body p-5">
+                        <h2 class="card-title text-primary border-b pb-2 mb-2">
+                            <span class="i-heroicons-user-circle"></span> @professorName
+                        </h2>
+                        
+                        <div class="space-y-3">
+                            @foreach (var assignment in kvp.Value)
+                            {
+                                <div class="bg-base-200 p-3 rounded-lg border-r-4 border-secondary hover:shadow-md transition-shadow">
+                                    <div class="font-bold text-base-content">@assignment.CourseName</div>
+                                    <div class="font-bold text-base-content">@assignment.DegreeLevelTitle</div>
+                                    <div class="font-bold text-base-content">@assignment.FieldTitle</div>
+                                    <div class="text-xs opacity-70 mt-1 flex justify-between">
+                                        <span>@assignment.TimeSlotDayOfWeek.ToPersian()</span>
+                                        <span class="font-mono">
+                                            @assignment.TimeSlotStartTime 
+                                            - 
+                                            @assignment.TimeSlotEndTime
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<AssignmentResDto> _allAssignments = new();
+    private Dictionary<long, List<AssignmentResDto>> _groupedAssignments = new();
+    private bool _isLoading = true;
+
+    [Inject] public IBaseService BaseService { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await GetData();
+        }
+    }
+
+    private async Task GetData()
+    {
+        _isLoading = true;
+        try 
+        {
+            var result = await BaseService.Get<List<AssignmentResDto>>("v1/Assignment/Get");
+            if (result is not null)
+            {
+                _allAssignments = result;
+                _groupedAssignments = _allAssignments
+                    .GroupBy(a => a.ProfessorId)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+}

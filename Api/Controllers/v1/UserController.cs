@@ -684,6 +684,12 @@ public class UserController(
     }
 
 
+    /// <summary>
+    /// دسترسی‌های قابل استفاده برای کاربر جاری را بازیابی می‌کند؛ برای کاربر مدیر اصلی
+    /// همه دسترسی‌های تعریف‌شده در سیستم و برای سایر کاربران دسترسی‌های ثبت‌شده در نقش‌های آن‌ها برگردانده می‌شود.
+    /// </summary>
+    /// <param name="ct">توکن لغو عملیات ناهمزمان.</param>
+    /// <returns>لیست کلیدهای دسترسی کاربر با قالب Controller.Action.</returns>
     [HttpGet("[action]")]
     [Display(Name = "دسترسی های کاربر")]
     public async Task<ApiResult<List<string>>> Permissions(CancellationToken ct)

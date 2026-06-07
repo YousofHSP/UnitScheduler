@@ -15,7 +15,6 @@ namespace Domain.Entities;
         // Navigation
         [IgnoreDataMember] public University HomeUniversity { get; set; } = null!;
         [IgnoreDataMember] public List<ProfessorSkill> Skills { get; set; } = [];
-        [IgnoreDataMember] public List<ProfessorPresence> Presences { get; set; } = [];
         [IgnoreDataMember] public List<ProfessorAvailability> Availabilities { get; set; } = [];
         [IgnoreDataMember] public List<Assignment> Assignments { get; set; } = [];
     }
@@ -30,9 +29,6 @@ public class ProfessorConfiguration : IEntityTypeConfiguration<Professor>
             .HasForeignKey(p => p.HomeUniversityId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasMany(i => i.Skills)
-            .WithOne(i => i.Professor)
-            .HasForeignKey(i => i.ProfessorId);
-        builder.HasMany(i => i.Presences)
             .WithOne(i => i.Professor)
             .HasForeignKey(i => i.ProfessorId);
         builder.HasMany(i => i.Availabilities)

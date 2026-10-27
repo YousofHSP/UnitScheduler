@@ -27,8 +27,14 @@ public class CourseDataInitializer(
 {
     public async Task InitializerData()
     {
-        var json = File.ReadAllText(
-            "E:\\Projects\\CSharp\\UniScheduling\\Service\\DataInitializer\\Data\\CourseData.json");
+        return;
+        var filePath = Path.Combine(AppContext.BaseDirectory, "DataInitializer", "Data", "CourseData.json");
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"Data file not found at expected path: {filePath}");
+        }
+
+        var json = File.ReadAllText(filePath);       
         var courses = JsonSerializer.Deserialize<List<CourseData>>(json);
         var fields = await fieldRepository.TableNoTracking.ToListAsync();
         var degreeLevels = await degreeLevelRepository.TableNoTracking.ToListAsync();

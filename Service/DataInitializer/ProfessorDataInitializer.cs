@@ -24,8 +24,15 @@ public class ProfessorDataInitializer(
 {
     public async Task InitializerData()
     {
-        var json = File.ReadAllText(
-            "E:\\Projects\\CSharp\\UniScheduling\\Service\\DataInitializer\\Data\\TeachersData.json");
+        
+        var filePath = Path.Combine(AppContext.BaseDirectory, "DataInitializer", "Data", "TeachersData.json");
+
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"Data file not found at expected path: {filePath}");
+        }
+
+        var json = File.ReadAllText(filePath);       
         var professorsJson = JsonSerializer.Deserialize<List<ProfessorData>>(json);
         var courseCodeToId = await courseRepository.TableNoTracking.ToDictionaryAsync(i => i.Code, i => i.Id);
         var professors = new List<Professor>();

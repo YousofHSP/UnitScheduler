@@ -14,7 +14,7 @@ public class UniversityDataInitializer(IRepository<University> repository) : IDa
         };
 
         var models = await repository.TableNoTracking.ToListAsync();
-        var addingList = list.Where(i => models.All(m => m.Id != i.Id)).ToList();
+        var addingList = list.Where(i => models.All(m => m.Code != i.Code)).ToList();
         await repository.AddRangeAsync(addingList, CancellationToken.None);
     }
 }

@@ -1,0 +1,118 @@
+@typeparam TModel where TModel : class
+@using global::Shared.Attribute
+
+@if (Model is not null)
+{
+    <EditForm EditContext="@_editContext"
+              OnValidSubmit="@SubmitValidAsync"
+              OnInvalidSubmit="@SubmitInvalidAsync"
+              FormName="@FormName">
+
+        <DataAnnotationsValidator />
+
+        <div class="@GridClass">
+            @foreach (var field in _fields)
+            {
+                <div @key="field.Property.Name"
+                     class="@(field.Attribute.ColSpan > 1
+                         ? "md:col-span-2"
+                         : "")">
+
+                    <DynamicFormField TModel="TModel"
+                                      Model="@Model"
+                                      Field="@field"
+                                      Options="@Options"
+                                      OptionSources="@OptionSources"
+                                      Disabled="@Disabled" />
+                </div>
+            }
+        </div>
+
+        @if (ShowSubmitButton)
+        {
+            <div class="mt-6 flex flex-wrap gap-2">
+                <button type="submit"
+                        class="@SubmitButtonClass"
+                        disabled="@Disabled">
+                    @SubmitText
+                </button>
+            </div>
+        }
+    </EditForm>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public TModel Model { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<TModel> OnValidSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnInvalidSubmit { get; set; }
+
+    [Parameter]
+    public IReadOnlyDictionary<string, IEnumerable<SelectOption>>? Options
+        { get; set; }
+
+    [Parameter]
+    public IReadOnlyDictionary<
+        string,
+        Func<Task<IEnumerable<SelectOption>>>>? OptionSources
+        { get; set; }
+
+    [Parameter]
+    public string FormName { get; set; } = "dynamic-form";
+
+    [Parameter]
+    public string GridClass { get; set; } =
+        "grid grid-cols-1 md:grid-cols-2 gap-4";
+
+    [Parameter]
+    public string SubmitButtonClass { get; set; } =
+        "btn btn-primary";
+
+    [Parameter]
+    public string SubmitText { get; set; } = "ذخیره";
+
+    [Parameter]
+    public bool ShowSubmitButton { get; set; } = true;
+
+    [Parameter]
+    public bool ShowValidationSummary { get; set; } = true;
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    private EditContext _editContext = default!;
+    private TModel? _currentModel;
+    private List<FormFieldMetadata> _fields = new();
+
+    protected override void OnParametersSet()
+    {
+        if (Model is null)
+        {
+            throw new InvalidOperationException(
+                "DynamicForm requires a non-null Model.");
+        }
+
+        if (!ReferenceEquals(_currentModel, Model))
+        {
+            _currentModel = Model;
+            _editContext = new EditContext(Model);
+            _fields = FormFieldMetadata.Build(typeof(TModel));
+        }
+    }
+
+    private async Task SubmitValidAsync()
+    {
+        if (OnValidSubmit.HasDelegate)
+            await OnValidSubmit.InvokeAsync(Model);
+    }
+
+    private async Task SubmitInvalidAsync()
+    {
+        if (OnInvalidSubmit.HasDelegate)
+            await OnInvalidSubmit.InvokeAsync();
+    }
+}

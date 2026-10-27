@@ -5,11 +5,11 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+        <AllowMissingPrunePackageData>true</AllowMissingPrunePackageData>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\WebClient.Client\WebClient.Client.csproj" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.8" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.12" />
     </ItemGroup>
 
     <ItemGroup>
@@ -21,6 +21,10 @@
       <_ContentIncludedByDefault Remove="wwwroot\css\bpmn-font\font\bpmn.ttf" />
       <_ContentIncludedByDefault Remove="wwwroot\css\bpmn-font\font\bpmn.woff" />
       <_ContentIncludedByDefault Remove="wwwroot\css\bpmn-font\font\bpmn.woff2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Shared\Shared.csproj" />
     </ItemGroup>
 
 </Project>

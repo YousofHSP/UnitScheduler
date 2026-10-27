@@ -1,0 +1,48 @@
+@using Domain.Entities
+@using global::Shared.DTOs.Course
+@using WebClient.Components.Shared
+@page "/Course/Index"
+@inherits IndexBase<CourseDto, CourseResDto>
+@rendermode InteractiveServer
+
+
+<IndexLayout
+    T="CourseResDto"
+    TDto="CourseDto"
+    PageTitle="درس"
+    OnDeleteClick="Delete"
+    IsLoading="_isLoading"
+    OnCreateClick="ShowCreateModal"
+    OnSearch="HandleSearch"
+    ControllerName="@ModelName"
+    IndexDto="IndexDto"
+    Data="@Data"
+    OnAction="OnRequestListActions"
+    ChangeList="Reload"
+    HasCheckbox="false"
+    Sort="IndexDto.Sort"
+    OnSortChanged="HeaderClicked"/>
+
+@code {
+
+    private CourseDto _model = new();
+
+    public CourseIndex()
+    {
+        ModelName = nameof(Course);
+    }
+
+
+    private async Task OnRequestListActions((string action, string id) arg)
+    {
+    }
+
+    private async Task ShowCreateModal()
+    {
+    }
+
+    private async Task Delete()
+    {
+    }
+
+}

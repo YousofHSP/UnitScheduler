@@ -1,0 +1,66 @@
+﻿<label class="input input-bordered flex items-center gap-2 w-full max-w-sm mb-5 mt-0">
+    <!-- آیکن ذره‌بین -->
+    <svg class="h-5 w-5 opacity-70 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.3-4.3M11 18a7 7 0 100-14 7 7 0 000 14z" />
+    </svg>
+
+    <!-- ورودی جستجو -->
+    <input type="search"
+           class="grow outline-none "
+           placeholder="جستجو در لیست ..."
+           required="@Required"
+           @bind="SearchText"
+           @bind:event="oninput" 
+           @ref="searchInput"/>
+</label>
+
+@code {
+    private string SearchText
+    {
+        get => Value ?? string.Empty;
+        set
+        {
+            Value = value;
+            _ = ValueChanged.InvokeAsync(Value);
+            DebounceInput();
+        }
+    }
+
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public EventCallback<string?> OnInput { get; set; }
+    [Parameter] public bool Required { get; set; } = false;
+
+    [Parameter] public int DebounceMilliseconds { get; set; } = 1500;
+
+    private System.Timers.Timer? _debounceTimer;
+
+    private void DebounceInput()
+    {
+        _debounceTimer?.Stop();
+        _debounceTimer?.Dispose();
+
+        _debounceTimer = new System.Timers.Timer(DebounceMilliseconds)
+        {
+            AutoReset = false
+        };
+        _debounceTimer.Elapsed += async (_, __) =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await OnInput.InvokeAsync(Value);
+            });
+        };
+        _debounceTimer.Start();
+    }
+    private ElementReference searchInput;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await searchInput.FocusAsync();
+        }
+    }
+
+}

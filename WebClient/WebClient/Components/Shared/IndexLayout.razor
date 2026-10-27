@@ -1,0 +1,93 @@
+﻿@using global::Shared.DTOs
+@using WebClient.Components.Shared.DynamicModal
+@using WebClient.Components.Shared.Loadings
+@using WebClient.Services.Common
+@typeparam T
+@typeparam TDto where TDto : class, new()
+
+<PageTitle>@PageTitle</PageTitle>
+<DeleteWarning OnClick="OnDeleteClick"></DeleteWarning>
+<DynamicModal TModel="TDto" Model="_model" ModalTitle="@ModalTitle" OnValidSubmit="Create"/>
+
+@if (IsLoading)
+{
+    <LoadingList></LoadingList>
+}
+else
+{
+    <PageToolbar OnCreateClick="CreateClick"
+                 OnSearch="OnSearch"
+                 OnUploadExcel="OnUploadExcel"
+                 ControllerName="@ControllerName"
+                 IndexDto="IndexDto"/>
+
+    <ResDtoTable Data="@Data" OnAction="OnActionClick" Actions="Actions"
+                 ChangeList="ChangeList" HasCheckbox="@HasCheckbox" Sort="Sort"
+                 OnSortChanged="OnSortChanged" OnDownload="OnDownload"/>
+}
+
+@code {
+    [Parameter] public string PageTitle { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback OnDeleteClick { get; set; }
+
+    [Parameter] public EventCallback OnCreateClick { get; set; }
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
+    [Parameter] public EventCallback OnUploadExcel { get; set; }
+    [Parameter] public string ControllerName { get; set; } = string.Empty;
+    [Parameter] public IndexDto IndexDto { get; set; } = null!;
+
+
+    [Parameter] public EventCallback<IndexDto> ChangeList { get; set; }
+    [Parameter] public Dictionary<string, string> Actions { get; set; } = new() { { "edit", "ویرایش" }, { "delete", "حذف" } };
+    [Parameter] public string ModalTitle { get; set; } = "ایجاد";
+    [Parameter] public EventCallback<(string action, string id)> OnAction { get; set; }
+    [Parameter] public EventCallback<T> OnDownload { get; set; }
+    [Parameter] public EventCallback<string> OnSortChanged { get; set; }
+    [Parameter] public IndexResDto<T> Data { get; set; } = new();
+    [Parameter] public bool HasCheckbox { get; set; } = true;
+    [Parameter] public IndexSortDto? Sort { get; set; }
+    [Inject] public IBaseService BaseService { get; set; }
+
+    [Parameter] public bool IsLoading { get; set; } = true;
+    [Inject] public IJSRuntime Js { get; set; }
+    private TDto _model = new();
+
+    private async Task CreateClick()
+    {
+        ModalTitle = "ایجاد";
+        _model = new();
+        // await GetParents(0);
+        await Js.InvokeVoidAsync("openDialog", "dataModal");
+    }
+
+    protected virtual async Task OnActionClick((string action, string id) data)
+    {
+        switch (data.action)
+        {
+            case "edit":
+                var result = await BaseService.Get<TDto>($"v1/{ControllerName}/GetDto/{data.id}");
+                if (result is null) return;
+                ModalTitle = "ویرایش";
+                _model = result;
+                await Js.InvokeVoidAsync("openDialog", "dataModal");
+                break;
+        }
+    }
+
+
+    protected virtual async Task Create()
+    {
+        T? result;
+        if (ModalTitle == "ویرایش")
+            result = await BaseService.Patch<TDto, T>($"v1/{ControllerName}/Update", _model);
+        else
+            result = await BaseService.Post<TDto, T>($"v1/{ControllerName}/Create", _model);
+        if (result is not null)
+        {
+            await Js.InvokeVoidAsync("close", "dataModal");
+            await ChangeList.InvokeAsync(IndexDto);
+        }
+    }
+
+}

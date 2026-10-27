@@ -1,4 +1,6 @@
 ﻿@using global::Shared
+@using Microsoft.AspNetCore.Components.Authorization
+@using WebClient.Components.Shared
 @inject NavigationManager Nav
 <div id="sidebar" class="w-64 pl-2 p-4 flex flex-col">
     <!-- لوگو -->
@@ -25,31 +27,47 @@
         @foreach (var group in MenuGroups)
         {
             <li class="my-1">
-                <details open="@(GroupIsActive(group) ? "open" : null)">
-                    <summary class="flex justify-between items-center">
-                        <div class="flex gap-2">
-                            <Icon Name="@group.Icon" Class="w-5 h-5"></Icon>
-                            @group.Title
-                        </div>
-                    </summary>
-                    <ul>
-                        @foreach (var item in group.Items)
-                        {
-                            <AuthorizeView Policy="@item.Policy">
-                                <Authorized>
-                                    <li class="my-1">
-                                        <NavLink ActiveClass="menu-active" href="@item.Url"
-                                                 class="flex items-center gap-2">
-                                            <Icon Name="@item.Icon" Class="w-4 h-4"></Icon>
-                                            <span>@item.Title</span>
-                                        </NavLink>
-                                    </li>
-                                </Authorized>
-                                <NotAuthorized></NotAuthorized>
-                            </AuthorizeView>
-                        }
-                    </ul>
-                </details>
+                @if (group.Items.Count == 0)
+                {
+                    @* <AuthorizeView Policy="@group.Policy"> *@
+                    @*     <Authorized> *@
+                            <NavLink ActiveClass="menu-active" href="@group.Url"
+                                     class="flex items-center gap-2">
+                                <Icon Name="@group.Icon" Class="w-4 h-4"></Icon>
+                                <span>@group.Title</span>
+                            </NavLink>
+                    //     </Authorized>
+                    //     <NotAuthorized></NotAuthorized>
+                    // </AuthorizeView>
+                }
+                else
+                {
+                    <details open="@(GroupIsActive(group) ? "open" : null)">
+                        <summary class="flex justify-between items-center">
+                            <div class="flex gap-2">
+                                <Icon Name="@group.Icon" Class="w-5 h-5"></Icon>
+                                @group.Title
+                            </div>
+                        </summary>
+                        <ul>
+                            @foreach (var item in group.Items)
+                            {
+                                @* <AuthorizeView Policy="@item.Policy"> *@
+                                @*     <Authorized> *@
+                                        <li class="my-1">
+                                            <NavLink ActiveClass="menu-active" href="@item.Url"
+                                                     class="flex items-center gap-2">
+                                                <Icon Name="@item.Icon" Class="w-4 h-4"></Icon>
+                                                <span>@item.Title</span>
+                                            </NavLink>
+                                        </li>
+                                //     </Authorized>
+                                //     <NotAuthorized></NotAuthorized>
+                                // </AuthorizeView>
+                            }
+                        </ul>
+                    </details>
+                }
 
             </li>
         }

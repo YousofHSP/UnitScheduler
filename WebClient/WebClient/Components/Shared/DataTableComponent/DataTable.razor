@@ -1,0 +1,397 @@
+@typeparam TItem
+@attribute [CascadingTypeParameter(nameof(TItem))]
+@implements IDisposable
+
+@* ستون‌ها اینجا رندر می‌شوند تا خودشان را ثبت کنند (خروجی HTML ندارند) *@
+<CascadingValue Value="this" IsFixed="true">
+    @Columns
+</CascadingValue>
+
+<div class="flex w-full min-w-0 flex-col gap-3 @Class">
+
+    @* ───────── نوار ابزار ───────── *@
+    <div class="flex flex-wrap items-center gap-2">
+        @if (ShowSearch)
+        {
+            <label class="input input-bordered flex w-full items-center gap-2 sm:w-72">
+                <svg class="h-4 w-4 opacity-60" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="search" class="grow" placeholder="@SearchPlaceholder"
+                       value="@_search" @oninput="OnSearchInput" />
+            </label>
+        }
+
+        @if (_columns.Any(c => c.Filterable))
+        {
+            <button type="button" class="btn btn-outline" @onclick="() => _showFilters = !_showFilters">
+                فیلتر
+                @if (_filters.Count > 0)
+                {
+                    <span class="badge badge-primary badge-sm">@_filters.Count</span>
+                }
+            </button>
+        }
+
+        <div class="flex items-center gap-2 sm:ms-auto">
+            @ToolbarContent
+            <button type="button" class="btn btn-ghost btn-square" title="بازخوانی" @onclick="ReloadAsync">
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+            </button>
+        </div>
+    </div>
+
+    @* ───────── پنل فیلترها ───────── *@
+    @if (_showFilters)
+    {
+        <div class="rounded-box border border-base-300 bg-base-100 p-4">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                @foreach (var col in _columns.Where(c => c.Filterable && !string.IsNullOrEmpty(c.Field)))
+                {
+                    var field = col.Field!;
+                    <label class="form-control w-full">
+                        <span class="label-text mb-1 block text-sm">@(col.FilterLabel ?? col.Title)</span>
+                        @if (col.FilterOptions is { Count: > 0 })
+                        {
+                            <select class="select select-bordered w-full"
+                                    value="@GetDraft(field)"
+                                    @onchange="@(e => SetDraft(field, e.Value?.ToString()))">
+                                <option value="">همه</option>
+                                @foreach (var opt in col.FilterOptions)
+                                {
+                                    <option value="@opt.Key">@opt.Value</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <input type="text" class="input input-bordered w-full"
+                                   value="@GetDraft(field)"
+                                   @oninput="@(e => SetDraft(field, e.Value?.ToString()))"
+                                   @onkeydown="@(async e => { if (e.Key == "Enter") await ApplyFiltersAsync(); })" />
+                        }
+                    </label>
+                }
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button" class="btn btn-ghost btn-sm" @onclick="ClearFiltersAsync">پاک‌کردن</button>
+                <button type="button" class="btn btn-primary btn-sm" @onclick="ApplyFiltersAsync">اعمال فیلتر</button>
+            </div>
+        </div>
+    }
+
+    @* ───────── جدول (اسکرول افقی داخل خود کانتینر) ───────── *@
+    <div class="relative overflow-x-auto rounded-box border border-base-300 bg-base-100">
+        @if (_loading)
+        {
+            <div class="absolute inset-0 z-20 flex items-center justify-center bg-base-100/60">
+                <span class="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+        }
+
+        <table class="table min-w-full whitespace-nowrap">
+            <thead>
+                <tr>
+                    @foreach (var col in _columns)
+                    {
+                        <th class="bg-base-200 @HideClass(col) @(col.Sortable ? "cursor-pointer select-none" : "")"
+                            @onclick="() => OnHeaderClick(col)">
+                            <span class="inline-flex items-center gap-1">
+                                @col.Title
+                                @if (col.Sortable && col.Field == _sortBy)
+                                {
+                                    <span class="text-xs">@(_sortDesc ? "▼" : "▲")</span>
+                                }
+                                else if (col.Sortable)
+                                {
+                                    <span class="text-xs opacity-30">⇅</span>
+                                }
+                            </span>
+                        </th>
+                    }
+                    @if (RowActions is not null)
+                    {
+                        <th class="sticky end-0 z-10 w-px bg-base-200 text-center">@ActionsHeader</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (_items.Count == 0 && !_loading)
+                {
+                    <tr>
+                        <td colspan="@(_columns.Count + (RowActions is null ? 0 : 1))" class="py-10 text-center text-base-content/60">
+                            @(_error ?? EmptyText)
+                        </td>
+                    </tr>
+                }
+                @for (var i = 0; i < _items.Count; i++)
+                {
+                    var item = _items[i];
+                    var popId = $"{_id}-pop-{i}";
+                    <tr class="group hover:bg-base-200/50">
+                        @foreach (var col in _columns)
+                        {
+                            <td class="@HideClass(col) @col.CellClass">
+                                @if (col.CellTemplate is not null)
+                                {
+                                    @col.CellTemplate(item)
+                                }
+                                else
+                                {
+                                    @col.Value?.Invoke(item)
+                                }
+                            </td>
+                        }
+                        @if (RowActions is not null)
+                        {
+                            <td class="sticky end-0 bg-base-100 text-center group-hover:bg-base-200">
+                                @* Popover API + anchor positioning: منو از overflow کانتینر بیرون می‌زند و بریده نمی‌شود *@
+                                <button type="button" class="btn btn-ghost btn-sm btn-square"
+                                        popovertarget="@popId" style="anchor-name:--@popId" aria-label="عملیات">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+                                </button>
+                                <ul class="dropdown dropdown-end menu w-48 rounded-box bg-base-100 p-2 text-start shadow-lg"
+                                    popover id="@popId" style="position-anchor:--@popId">
+                                    @RowActions(item)
+                                </ul>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* ───────── فوتر: تعداد، اندازهٔ صفحه، صفحه‌بندی ───────── *@
+    <div class="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+        <div class="flex items-center gap-3 text-sm text-base-content/70">
+            <select class="select select-bordered select-sm" value="@_pageSize" @onchange="OnPageSizeChanged">
+                @foreach (var s in PageSizeOptions)
+                {
+                    <option value="@s" selected="@(s == _pageSize)">@s</option>
+                }
+            </select>
+            <span>
+                @if (_total == 0) { <text>۰ رکورد</text> }
+                else { <text>@((_page - 1) * _pageSize + 1) تا @(Math.Min(_page * _pageSize, _total)) از @_total</text> }
+            </span>
+        </div>
+
+        @if (TotalPages > 1)
+        {
+            <div class="join">
+                <button class="join-item btn btn-sm" disabled="@(_page == 1)" @onclick="() => GoToAsync(_page - 1)">‹</button>
+                @foreach (var p in PageWindow())
+                {
+                    if (p == 0)
+                    {
+                        <button class="join-item btn btn-sm btn-disabled hidden sm:inline-flex">…</button>
+                    }
+                    else
+                    {
+                        var page = p;
+                        <button class="join-item btn btn-sm @(page == _page ? "btn-active btn-primary" : "hidden sm:inline-flex")"
+                                @onclick="() => GoToAsync(page)">@(page)</button>
+                    }
+                }
+                <button class="join-item btn btn-sm" disabled="@(_page == TotalPages)" @onclick="() => GoToAsync(_page + 1)">›</button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    // ───────── پارامترها ─────────
+    /// <summary>تعریف ستون‌ها با کامپوننت DataTableColumn.</summary>
+    [Parameter] public RenderFragment? Columns { get; set; }
+
+    /// <summary>آیتم‌های منوی عملیات هر ردیف (تگ‌های li).</summary>
+    [Parameter] public RenderFragment<TItem>? RowActions { get; set; }
+
+    /// <summary>دکمه‌های اضافه کنار جستجو (مثلاً «افزودن»).</summary>
+    [Parameter] public RenderFragment? ToolbarContent { get; set; }
+
+    /// <summary>تابعی که داده را از سرور می‌گیرد.</summary>
+    [Parameter, EditorRequired] public Func<DataTableRequest, CancellationToken, Task<DataTableResult<TItem>>> ServerData { get; set; } = default!;
+
+    [Parameter] public int PageSize { get; set; } = 10;
+    [Parameter] public int[] PageSizeOptions { get; set; } = { 10, 25, 50, 100 };
+    [Parameter] public bool ShowSearch { get; set; } = true;
+    [Parameter] public int SearchDebounceMs { get; set; } = 400;
+    [Parameter] public string SearchPlaceholder { get; set; } = "جستجو...";
+    [Parameter] public string EmptyText { get; set; } = "موردی یافت نشد";
+    [Parameter] public string ActionsHeader { get; set; } = "عملیات";
+    [Parameter] public string? Class { get; set; }
+
+    // ───────── وضعیت داخلی ─────────
+    private readonly List<DataTableColumn<TItem>> _columns = new();
+    private readonly string _id = "dt" + Guid.NewGuid().ToString("N")[..8];
+    private IReadOnlyList<TItem> _items = Array.Empty<TItem>();
+    private int _total, _page = 1, _pageSize;
+    private string _search = "";
+    private string? _sortBy, _error;
+    private bool _sortDesc, _loading, _showFilters, _initialized;
+    private Dictionary<string, string> _filters = new();
+    private readonly Dictionary<string, string> _draft = new();
+    private CancellationTokenSource? _loadCts, _debounceCts;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_total / (double)_pageSize));
+
+    internal void AddColumn(DataTableColumn<TItem> col)
+    {
+        if (!_columns.Contains(col)) _columns.Add(col);
+    }
+
+    protected override void OnInitialized() => _pageSize = PageSize;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_initialized)
+        {
+            _initialized = true;
+            await LoadAsync(); // ستون‌ها تا اینجا ثبت شده‌اند
+        }
+    }
+
+    /// <summary>از بیرون (مثلاً بعد از حذف) داده را دوباره بگیرید: await table.ReloadAsync()</summary>
+    public Task ReloadAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loadCts?.Cancel();
+        _loadCts = new CancellationTokenSource();
+        var ct = _loadCts.Token;
+
+        _loading = true;
+        _error = null;
+        StateHasChanged();
+
+        try
+        {
+            var result = await ServerData(new DataTableRequest
+            {
+                Page = _page,
+                PageSize = _pageSize,
+                Search = string.IsNullOrWhiteSpace(_search) ? null : _search.Trim(),
+                SortBy = _sortBy,
+                SortDescending = _sortDesc,
+                Filters = new Dictionary<string, string>(_filters)
+            }, ct);
+
+            if (ct.IsCancellationRequested) return;
+            _items = result.Items;
+            _total = result.TotalCount;
+
+            // مثلاً آخرین ردیف صفحهٔ آخر حذف شده → یک صفحه عقب برگرد
+            if (_page > TotalPages)
+            {
+                _page = TotalPages;
+                await LoadAsync();
+                return;
+            }
+        }
+        catch (OperationCanceledException) { return; }
+        catch (Exception ex)
+        {
+            _items = Array.Empty<TItem>();
+            _total = 0;
+            _error = "خطا در دریافت اطلاعات: " + ex.Message;
+        }
+
+        if (!ct.IsCancellationRequested)
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ───────── جستجو (با debounce) ─────────
+    private async Task OnSearchInput(ChangeEventArgs e)
+    {
+        _search = e.Value?.ToString() ?? "";
+        _debounceCts?.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        try { await Task.Delay(SearchDebounceMs, _debounceCts.Token); }
+        catch (TaskCanceledException) { return; }
+        _page = 1;
+        await LoadAsync();
+    }
+
+    // ───────── فیلتر ─────────
+    private string GetDraft(string field) =>
+        _draft.TryGetValue(field, out var v) ? v
+        : _filters.TryGetValue(field, out var f) ? f : "";
+
+    private void SetDraft(string field, string? value) => _draft[field] = value ?? "";
+
+    private async Task ApplyFiltersAsync()
+    {
+        foreach (var (k, v) in _draft)
+        {
+            if (string.IsNullOrWhiteSpace(v)) _filters.Remove(k);
+            else _filters[k] = v.Trim();
+        }
+        _draft.Clear();
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        _filters.Clear();
+        _draft.Clear();
+        _page = 1;
+        await LoadAsync();
+    }
+
+    // ───────── مرتب‌سازی (صعودی → نزولی → بدون مرتب‌سازی) ─────────
+    private async Task OnHeaderClick(DataTableColumn<TItem> col)
+    {
+        if (!col.Sortable || string.IsNullOrEmpty(col.Field)) return;
+
+        if (_sortBy != col.Field) { _sortBy = col.Field; _sortDesc = false; }
+        else if (!_sortDesc) { _sortDesc = true; }
+        else { _sortBy = null; _sortDesc = false; }
+
+        _page = 1;
+        await LoadAsync();
+    }
+
+    // ───────── صفحه‌بندی ─────────
+    private async Task GoToAsync(int page)
+    {
+        _page = Math.Clamp(page, 1, TotalPages);
+        await LoadAsync();
+    }
+
+    private async Task OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var size))
+        {
+            _pageSize = size;
+            _page = 1;
+            await LoadAsync();
+        }
+    }
+
+    /// <summary>لیست شمارهٔ صفحه‌ها؛ عدد 0 یعنی «…»</summary>
+    private IEnumerable<int> PageWindow()
+    {
+        var total = TotalPages;
+        if (total <= 7) { for (var i = 1; i <= total; i++) yield return i; yield break; }
+
+        yield return 1;
+        var start = Math.Max(2, _page - 1);
+        var end = Math.Min(total - 1, _page + 1);
+        if (start > 2) yield return 0;
+        for (var i = start; i <= end; i++) yield return i;
+        if (end < total - 1) yield return 0;
+        yield return total;
+    }
+
+    private static string HideClass(DataTableColumn<TItem> c) => c.HideOnMobile ? "hidden md:table-cell" : "";
+
+    public void Dispose()
+    {
+        _loadCts?.Cancel(); _loadCts?.Dispose();
+        _debounceCts?.Cancel(); _debounceCts?.Dispose();
+    }
+}

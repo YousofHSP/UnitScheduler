@@ -20,11 +20,12 @@
         public int Page { get; set; }
         public int Limit { get; set; }
         public Dictionary<string, string> Details { get; set; } = new();
-        public List<T> Data { get; set; }
+        public List<T> Data { get; set; } = [];
     }
     public class IndexSortDto
     {
         public string By { get; set; }
         public string Type { get; set; }
+        public bool IsAscending { get; set; }
     }
 }

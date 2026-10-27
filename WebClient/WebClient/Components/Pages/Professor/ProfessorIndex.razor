@@ -1,0 +1,48 @@
+@page "/Professor/Index"
+@using Domain.Entities
+@using global::Shared.DTOs.ProfessorDtos
+@using WebClient.Components.Shared
+@inherits WebClient.Components.Shared.IndexBase<ProfessorDto, ProfessorResDto>
+@rendermode InteractiveServer
+
+
+<IndexLayout
+    T="ProfessorResDto"
+    TDto="ProfessorDto"
+    PageTitle="استاد"
+    OnDeleteClick="Delete"
+    IsLoading="_isLoading"
+    OnCreateClick="ShowCreateModal"
+    OnSearch="HandleSearch"
+    ControllerName="@ModelName"
+    IndexDto="IndexDto"
+    Data="@Data"
+    OnAction="OnRequestListActions"
+    ChangeList="Reload"
+    HasCheckbox="false"
+    Sort="IndexDto.Sort"
+    OnSortChanged="HeaderClicked"/>
+
+@code {
+
+    private ProfessorDto _model = new();
+
+    public ProfessorIndex()
+    {
+        ModelName = nameof(Professor);
+    }
+
+
+    private async Task OnRequestListActions((string action, string id) arg)
+    {
+    }
+
+    private async Task ShowCreateModal()
+    {
+    }
+
+    private async Task Delete()
+    {
+    }
+
+}

@@ -1,0 +1,23 @@
+@using WebClient.Components.Shared.DynamicForm
+@typeparam TModel where TModel : class, new()
+<dialog id="@ModalId" class="modal">
+  <div class="modal-box w-11/12 max-w-5xl">
+    
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute left-2 top-2">✕</button>
+    </form>
+    <h3 class="text-lg font-bold">@ModalTitle</h3>
+    <DynamicForm TModel="TModel"
+                 Model="@Model"
+                 OnValidSubmit="@(async () => await OnValidSubmit.InvokeAsync())"/>
+  </div>
+</dialog>
+
+
+@code {
+
+  [Parameter] public string ModalId { get; set; } = "dataModal";
+  [Parameter] public string ModalTitle { get; set; } = "ایجاد";
+  [Parameter] public TModel Model { get; set; } = new();
+  [Parameter] public EventCallback OnValidSubmit { get; set; }
+}

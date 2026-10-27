@@ -16,8 +16,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebFramework", "WebFramewor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebClient", "WebClient\WebClient\WebClient.csproj", "{BA66D11D-8763-4F73-AE54-F54635620FF1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebClient.Client", "WebClient\WebClient.Client\WebClient.Client.csproj", "{20EEE5A1-F477-4993-B747-F685EA2747C2}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,9 +54,5 @@ Global
 		{BA66D11D-8763-4F73-AE54-F54635620FF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA66D11D-8763-4F73-AE54-F54635620FF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BA66D11D-8763-4F73-AE54-F54635620FF1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{20EEE5A1-F477-4993-B747-F685EA2747C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{20EEE5A1-F477-4993-B747-F685EA2747C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{20EEE5A1-F477-4993-B747-F685EA2747C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{20EEE5A1-F477-4993-B747-F685EA2747C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

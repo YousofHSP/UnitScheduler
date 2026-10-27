@@ -1,0 +1,56 @@
+﻿@using global::Shared.DTOs
+@using Microsoft.AspNetCore.Components.Authorization
+@using WebClient.Components.Shared.Loadings
+<!-- PageToolbar.razor -->
+<div class="flex justify-between items-center">
+    <div class="flex gap-2">
+        
+        <button class="btn btn-primary mb-5" @onclick="OnCreateClick">
+            ایجاد
+        </button>
+        @if (OnUploadExcel.HasDelegate)
+        {
+            <button class="btn btn-primary mb-5" @onclick="OnUploadExcel">
+                ارسال با اکسل
+            </button>
+        }
+
+        @if (OnCreateClick.HasDelegate)
+        {
+            <AuthorizeView Policy="@(string.IsNullOrEmpty(CreatePolicy) ? ControllerName + ".Create" : CreatePolicy)">
+                <Authorized>
+                    <button class="btn btn-primary mb-5" @onclick="OnCreateClick">
+                        ایجاد
+                    </button>
+                    @if (OnUploadExcel.HasDelegate)
+                    {
+                        <button class="btn btn-primary mb-5" @onclick="OnUploadExcel">
+                            ارسال با اکسل
+                        </button>
+                    }
+                </Authorized>
+            </AuthorizeView>
+        }
+        <SearchInput @bind-Value="internalSearchTerm" OnInput="HandleSearchInput"/>
+    </div>
+
+    <ExportToExcel ControllerName="@ControllerName" IndexDto="@IndexDto" />
+</div>
+
+@code {
+    private string internalSearchTerm = string.Empty;
+
+    [Parameter] public EventCallback OnCreateClick { get; set; }
+    [Parameter] public EventCallback OnUploadExcel { get; set; }
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
+
+    [Parameter] public string? CreatePolicy { get; set; } = string.Empty;
+    [Parameter] public string ControllerName { get; set; } = string.Empty;
+    [Parameter] public IndexDto IndexDto { get; set; } = null!;
+
+    private async Task HandleSearchInput(string? value)
+    {
+        internalSearchTerm = value ?? string.Empty;
+        await OnSearch.InvokeAsync(internalSearchTerm);
+    }
+}

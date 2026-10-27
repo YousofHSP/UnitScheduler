@@ -2,6 +2,7 @@ namespace WebClient.Services.Common;
 
 public interface IBaseService
 {
+    string Test();
     Task<TResDto?> Post<TDto, TResDto>(string uri, TDto dto, bool checkAuth = true);
     Task<bool> Post<TDto>(string uri, TDto dto, bool checkAuth = true);
     Task<bool> Post(string uri, bool checkAuth = true);

@@ -1,8 +1,8 @@
 using Domain.Entities;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Server.Circuits;
-using WebClient.Client.Pages;
 using WebClient.Components;
+using WebClient.Components.Shared;
 using WebClient.Services;
 using WebClient.Services.Api;
 using WebClient.Services.Common;
@@ -35,7 +35,7 @@ builder.Services.AddHttpClient<IBaseService, BaseService>(client =>
 });
 // }).AddHttpMessageHandler<AuthGuardHandler>();
 builder.Services.AddScoped<AuthGuardHandler>();
-
+builder.Services.AddScoped<ActionMenuService>();
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -106,8 +106,6 @@ app.UseAntiforgery();
 app.MapControllers();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(WebClient.Client._Imports).Assembly);
+    .AddInteractiveServerRenderMode();
 
 app.Run();

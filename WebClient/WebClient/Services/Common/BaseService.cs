@@ -206,6 +206,11 @@ public class BaseService : IBaseService
     public HttpClient GetHttpClient()
         => _httpClient;
 
+    public string Test()
+    {
+        return "ok";
+    }
+
     public async Task<TResDto?> Post<TDto, TResDto>(string uri, TDto dto, bool checkAuth = true) 
     {
         try

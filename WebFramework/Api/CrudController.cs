@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using Shared.Attribute;
 using Shared.DTOs;
 
 namespace WebFramework.Api;
@@ -117,6 +118,19 @@ public class CrudController<TDto, TResDto, TEntity, TKey>(
     }
 
     [Display(Name = "اطلاعات")]
+    [HttpGet("[action]/{id}")]
+    public virtual async Task<ApiResult<TDto>> GetDto(TKey id, CancellationToken cancellationToken)
+    {
+        var query = Repository.TableNoTracking.AsQueryable();
+        query = setIncludes(query);
+        var model = await query
+            .SingleOrDefaultAsync(p => p.Id!.Equals(id), cancellationToken);
+        if (model == null)
+            return NotFound();
+        var dto = Mapper.Map<TDto>(model);
+        return dto;
+    }
+    [Display(Name = "اطلاعات")]
     [HttpGet("{id}")]
     public virtual async Task<ApiResult<TResDto>> Get(TKey id, CancellationToken cancellationToken)
     {
@@ -136,6 +150,8 @@ public class CrudController<TDto, TResDto, TEntity, TKey>(
     {
         await checkPermission(HttpContext);
         var model = dto.ToEntity(Mapper);
+        if (model is BaseEntity entity)
+            entity.CreatorUserId = User.Identity!.GetUserId<long>();
 
         model = await setProperty(model);
         await Repository.AddAsync(model, cancellationToken);
@@ -194,6 +210,28 @@ public class CrudController<TDto, TResDto, TEntity, TKey>(
             }
 
             return new SelectDto { Id = id, Title = title };
+        }).ToList();
+        return Ok(list);
+    }
+    [Display(Name = "لیست انتخابی")]
+    [HttpGet("[action]")]
+    public virtual async Task<ApiResult<List<SelectOption>>> GetSelectList2(CancellationToken cancellationToken)
+    {
+        var models = await Repository.TableNoTracking.ToListAsync(cancellationToken);
+        var list = models.Select(i =>
+        {
+            var id = i.Id;
+            string? title = "";
+
+            var titleProp = i.GetType().GetProperty("Title");
+            if (titleProp is null) titleProp = i.GetType().GetProperty("Name");
+            if (titleProp != null)
+            {
+                var value = titleProp.GetValue(i);
+                title = value?.ToString() ?? "";
+            }
+
+            return new SelectOption(id.ToString(), title );
         }).ToList();
         return Ok(list);
     }

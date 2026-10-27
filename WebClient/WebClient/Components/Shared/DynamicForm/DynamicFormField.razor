@@ -1,0 +1,545 @@
+@typeparam TModel where TModel : class
+@using System.Collections
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+@using System.Linq.Expressions
+@using System.Reflection
+@using System.Text.Json
+@using global::Shared.Attribute
+@using WebClient.Services.Common
+
+<div class="form-control w-full">
+
+    @if (Field.InputType != FormInputType.Checkbox)
+    {
+        <label class="label" for="@InputId">
+            <span class="label-text font-medium">
+                @Field.Label
+            </span>
+
+            @if (IsRequired)
+            {
+                <span class="text-error">*</span>
+            }
+        </label>
+    }
+
+    @if (Field.Attribute.ReadOnly)
+    {
+        <input id="@InputId"
+               class="input input-bordered w-full"
+               value="@DisplayValue"
+               readonly
+               disabled="@Disabled"/>
+    }
+    else
+    {
+        @switch (Field.InputType)
+        {
+            case FormInputType.Text:
+                <DynamicComponent
+                    Type="@typeof(InputText)"
+                    Parameters="@GetInputParameters(typeof(string))"/>
+                break;
+
+            case FormInputType.Password:
+                <DynamicComponent
+                    Type="@typeof(InputText)"
+                    Parameters="@GetInputParameters(
+                                    typeof(string), "password")"/>
+                break;
+
+            case FormInputType.Number:
+                <DynamicComponent
+                    Type="@GetNumberComponentType()"
+                    Parameters="@GetInputParameters(PropertyType)"/>
+                break;
+
+            case FormInputType.Date:
+                <DynamicComponent
+                    Type="@GetDateComponentType()"
+                    Parameters="@GetInputParameters(PropertyType)"/>
+                break;
+
+            case FormInputType.Checkbox:
+                <label class="label cursor-pointer justify-start gap-3">
+                    <span class="label-text font-medium">
+                        @Field.Label
+                    </span>
+
+                    <DynamicComponent
+                        Type="@typeof(InputCheckbox)"
+                        Parameters="@GetInputParameters(typeof(bool))"/>
+                </label>
+                break;
+
+            case FormInputType.TextArea:
+                <textarea id="@InputId"
+                          class="@InputClass"
+                          placeholder="@Field.Attribute.Placeholder"
+                          disabled="@Disabled"
+                          value="@DisplayValue"
+                          @onchange="SetStringValue"></textarea>
+                break;
+
+            case FormInputType.Select:
+                @if (IsEnumProperty)
+                {
+                    <DynamicComponent
+                        Type="@GetEnumSelectType()"
+                        Parameters="@GetEnumSelectParameters()"/>
+                }
+                else
+                {
+                    <select id="@InputId"
+                            class="@InputClass"
+                            value="@DisplayValue"
+                            disabled="@Disabled"
+                            @onchange="SetScalarOption">
+
+                        <option value="">
+                            @($"-- {Field.Attribute.Placeholder ?? "انتخاب کنید"} --")
+                        </option>
+
+                        @foreach (var option in _options)
+                        {
+                            <option value="@option.Value"
+                                    disabled="@option.Disabled">
+                                @option.Text
+                            </option>
+                        }
+                    </select>
+                }
+
+                break;
+
+            case FormInputType.MultiSelect:
+                <select id="@InputId"
+                        class="@InputClass"
+                        multiple
+                        disabled="@Disabled"
+                        @onchange="SetMultipleOptions">
+
+                    @foreach (var option in _options)
+                    {
+                        <option value="@option.Value"
+                                selected="@GetSelectedValues().Contains(option.Value)"
+                                disabled="@option.Disabled">
+                            @option.Text
+                        </option>
+                    }
+                </select>
+
+                <label class="label">
+                    <span class="label-text-alt">
+                        برای انتخاب چند مورد از Ctrl یا Cmd استفاده کنید.
+                    </span>
+                </label>
+                break;
+        }
+    }
+
+    <DynamicComponent
+        Type="@GetValidationMessageType()"
+        Parameters="@GetValidationMessageParameters()"/>
+
+    @if (!string.IsNullOrWhiteSpace(_optionsError))
+    {
+        <p class="text-error text-sm mt-1">@_optionsError</p>
+    }
+
+    @if (_loadingOptions)
+    {
+        <span class="loading loading-spinner loading-sm mt-2"></span>
+    }
+</div>
+
+@code {
+    [CascadingParameter] private EditContext? CascadedEditContext { get; set; }
+
+    [Inject] private HttpClient Http { get; set; } = default!;
+
+    [Parameter, EditorRequired] public TModel Model { get; set; } = default!;
+
+    [Parameter, EditorRequired] public FormFieldMetadata Field { get; set; } = default!;
+
+    [Parameter] public IReadOnlyDictionary<string, IEnumerable<SelectOption>>? Options { get; set; }
+
+    [Parameter]
+    public IReadOnlyDictionary<
+        string,
+        Func<Task<IEnumerable<SelectOption>>>>? OptionSources { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    private readonly List<SelectOption> _options = new();
+
+    private bool _loadingOptions;
+    private string? _optionsError;
+    private string? _loadedEndpoint;
+    [Inject] public IBaseService BaseService { get; set; }
+
+    private string InputId => $"field-{Field.Property.Name}";
+
+    private string InputClass => Field.InputType switch
+    {
+        FormInputType.TextArea =>
+            "textarea textarea-bordered w-full",
+
+        FormInputType.Select or FormInputType.MultiSelect =>
+            "select select-bordered w-full",
+
+        _ => "input input-bordered w-full"
+    };
+
+    private Type PropertyType => Field.Property.PropertyType;
+
+    private Type UnderlyingType =>
+        Nullable.GetUnderlyingType(PropertyType) ?? PropertyType;
+
+    private bool IsEnumProperty => UnderlyingType.IsEnum;
+
+    private bool IsRequired =>
+        Field.Property.IsDefined(typeof(RequiredAttribute), true);
+
+    private string DisplayValue =>
+        Convert.ToString(
+            Field.Property.GetValue(Model),
+            CultureInfo.InvariantCulture) ?? "";
+
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _initialized)
+            return;
+
+        if (CascadedEditContext is null)
+        {
+            throw new InvalidOperationException(
+                "DynamicFormField must be inside an EditForm.");
+        }
+
+        _initialized = true;
+
+        await LoadOptionsAsync();
+
+        StateHasChanged();
+    }
+
+    private Type GetNumberComponentType() =>
+        typeof(InputNumber<>).MakeGenericType(PropertyType);
+
+    private Type GetDateComponentType() =>
+        typeof(InputDate<>).MakeGenericType(PropertyType);
+
+    private Type GetEnumSelectType() =>
+        typeof(InputSelect<>).MakeGenericType(PropertyType);
+
+    private Dictionary<string, object> GetInputParameters(
+        Type valueType,
+        string? htmlInputType = null)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            ["Value"] = Field.Property.GetValue(Model)
+                        ?? (valueType.IsValueType
+                            ? Activator.CreateInstance(valueType)!
+                            : ""),
+
+            ["ValueChanged"] = CreateValueChanged(valueType),
+            ["ValueExpression"] = CreateValueExpression(valueType),
+            ["class"] = InputClass,
+            ["id"] = InputId,
+            ["disabled"] = Disabled
+        };
+
+        if (Field.Attribute.Placeholder is not null)
+            parameters["placeholder"] = Field.Attribute.Placeholder;
+
+        if (htmlInputType is not null)
+            parameters["type"] = htmlInputType;
+
+        return parameters;
+    }
+
+    private Dictionary<string, object> GetEnumSelectParameters()
+    {
+        var parameters = GetInputParameters(PropertyType);
+
+        parameters["ChildContent"] = (RenderFragment)(builder =>
+        {
+            var sequence = 0;
+
+            builder.OpenElement(sequence++, "option");
+            builder.AddAttribute(sequence++, "value", "");
+            builder.AddContent(sequence++, "-- انتخاب کنید --");
+            builder.CloseElement();
+
+            foreach (var option in _options)
+            {
+                builder.OpenElement(sequence++, "option");
+                builder.AddAttribute(sequence++, "value", option.Value);
+                builder.AddAttribute(sequence++, "disabled", option.Disabled);
+                builder.AddContent(sequence++, option.Text);
+                builder.CloseElement();
+            }
+        });
+
+        return parameters;
+    }
+
+    private Type GetValidationMessageType() =>
+        typeof(ValidationMessage<>).MakeGenericType(PropertyType);
+
+    private Dictionary<string, object> GetValidationMessageParameters() =>
+        new()
+        {
+            ["For"] = CreateValueExpression(PropertyType),
+            ["class"] = "text-error text-sm mt-1"
+        };
+
+    private object CreateValueChanged(Type valueType) =>
+        GetType()
+            .GetMethod(
+                nameof(CreateTypedCallback),
+                BindingFlags.Instance | BindingFlags.NonPublic)!
+            .MakeGenericMethod(valueType)
+            .Invoke(this, null)!;
+
+    private EventCallback<TValue> CreateTypedCallback<TValue>() =>
+        EventCallback.Factory.Create<TValue>(
+            this,
+            value => SetPropertyValue(value, notifyFieldChanged: false));
+
+    private Expression CreateValueExpression(Type valueType)
+    {
+        var propertyExpression =
+            Expression.Property(Expression.Constant(Model), Field.Property);
+
+        var delegateType = typeof(Func<>).MakeGenericType(valueType);
+
+        return Expression.Lambda(delegateType, propertyExpression);
+    }
+
+    private void SetPropertyValue(
+        object? value,
+        bool notifyFieldChanged = true)
+    {
+        Field.Property.SetValue(Model, value);
+
+        if (notifyFieldChanged)
+        {
+            CascadedEditContext!.NotifyFieldChanged(
+                new FieldIdentifier(Model, Field.Property.Name));
+        }
+    }
+
+    private Task SetStringValue(ChangeEventArgs args)
+    {
+        SetPropertyValue(args.Value?.ToString());
+        return Task.CompletedTask;
+    }
+
+    private Task SetScalarOption(ChangeEventArgs args)
+    {
+        var raw = args.Value?.ToString();
+
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            SetPropertyValue(null);
+            return Task.CompletedTask;
+        }
+
+        SetPropertyValue(ConvertString(raw, UnderlyingType));
+        return Task.CompletedTask;
+    }
+
+    private Task SetMultipleOptions(ChangeEventArgs args)
+    {
+        var values = args.Value switch
+        {
+            string[] array => array,
+            IEnumerable<string> items => items.ToArray(),
+            string single when single.Length > 0 => new[] { single },
+            _ => Array.Empty<string>()
+        };
+
+        var elementType = GetMultiSelectElementType(PropertyType);
+
+        var converted = values
+            .Select(value => ConvertString(value, elementType))
+            .ToArray();
+
+        if (PropertyType.IsArray)
+        {
+            var array = Array.CreateInstance(elementType, converted.Length);
+
+            for (var i = 0; i < converted.Length; i++)
+                array.SetValue(converted[i], i);
+
+            SetPropertyValue(array);
+        }
+        else
+        {
+            var listType = typeof(List<>).MakeGenericType(elementType);
+            var list = (IList)Activator.CreateInstance(listType)!;
+
+            foreach (var item in converted)
+                list.Add(item);
+
+            SetPropertyValue(list);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private string[] GetSelectedValues()
+    {
+        var value = Field.Property.GetValue(Model);
+
+        if (value is not IEnumerable enumerable || value is string)
+            return Array.Empty<string>();
+
+        return enumerable.Cast<object?>()
+            .Where(item => item is not null)
+            .Select(item =>
+                Convert.ToString(item, CultureInfo.InvariantCulture)!)
+            .ToArray();
+    }
+
+    private async Task LoadOptionsAsync()
+    {
+        _optionsError = null;
+
+        // Enum: گزینه‌ها از خود Enum ساخته می‌شوند.
+        if (IsEnumProperty)
+        {
+            _options.Clear();
+
+            foreach (var value in Enum.GetValues(UnderlyingType))
+            {
+                var name = value!.ToString()!;
+                var member = UnderlyingType.GetMember(name).FirstOrDefault();
+
+                var label =
+                    member?.GetCustomAttribute<DisplayAttribute>()?.GetName()
+                    ?? name;
+
+                _options.Add(new SelectOption(name, label));
+            }
+
+            return;
+        }
+
+        // گزینه‌های ثابت
+        if (Options is not null &&
+            Options.TryGetValue(Field.Property.Name, out var staticOptions))
+        {
+            _options.Clear();
+            _options.AddRange(staticOptions);
+            return;
+        }
+
+        // گزینه‌های تأمین‌شده از سرویس
+        if (OptionSources is not null &&
+            OptionSources.TryGetValue(Field.Property.Name, out var source))
+        {
+            _options.Clear();
+
+            try
+            {
+                _loadingOptions = true;
+                _options.AddRange(await source());
+            }
+            catch (Exception ex)
+            {
+                _optionsError = $"خطا در دریافت گزینه‌ها: {ex.Message}";
+            }
+            finally
+            {
+                _loadingOptions = false;
+            }
+
+            return;
+        }
+
+        var endpoint = Field.OptionsAttribute?.Endpoint;
+
+        if (string.IsNullOrWhiteSpace(endpoint))
+            return;
+
+        // کش باید قبل از پاک‌کردن گزینه‌ها بررسی شود.
+        if (_loadedEndpoint == endpoint && _options.Count > 0)
+            return;
+
+
+        try
+        {
+            _loadingOptions = true;
+
+            // این فراخوانی باید از IBaseService انجام شود.
+            var result = await BaseService.Get<List<SelectOption>>(endpoint);
+
+            if (result is null)
+            {
+                _optionsError =
+                    $"سرویس برای فیلد {Field.Property.Name} نتیجه‌ای برنگرداند.";
+                return;
+            }
+
+            _options.Clear();
+            _options.AddRange(result);
+            _loadedEndpoint = endpoint;
+        }
+        catch (Exception ex)
+        {
+            _optionsError = $"خطا در دریافت گزینه‌ها: {ex.Message}";
+        }
+        finally
+        {
+            _loadingOptions = false;
+        }
+    }
+
+    private static bool TryGetPropertyIgnoreCase(
+        JsonElement element,
+        string propertyName,
+        out JsonElement value)
+    {
+        foreach (var property in element.EnumerateObject())
+        {
+            if (string.Equals(
+                    property.Name,
+                    propertyName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static Type GetMultiSelectElementType(Type type)
+    {
+        if (type.IsArray)
+            return type.GetElementType()!;
+
+        return type.GetGenericArguments()[0];
+    }
+
+    private static object ConvertString(string value, Type targetType)
+    {
+        var actualType =
+            Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+        if (actualType.IsEnum)
+            return Enum.Parse(actualType, value, ignoreCase: true);
+
+        return Convert.ChangeType(value, actualType, CultureInfo.InvariantCulture)!;
+    }
+
+}

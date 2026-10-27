@@ -2,7 +2,7 @@
 using AutoMapper;
 using Data.Contracts;
 using Domain.Entities;
-using Shared.DTOs;
+using Shared.DTOs.ProfessorDtos;
 using WebFramework.Api;
 
 namespace Api.Controllers.v1;

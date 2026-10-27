@@ -1,0 +1,64 @@
+﻿@inject ActionMenuService MenuService
+@rendermode InteractiveServer
+
+@*
+    ActionMenuHost
+
+    این کامپوننت تنها نمونه ActionMenu موجود در کل برنامه را میزبانی می‌کند.
+
+    علت استفاده از Host:
+
+    اگر ActionMenu داخل جدول، مودال یا هر کامپوننت دیگری رندر شود،
+    مختصات نمایش تحت تأثیر CSS والد قرار می‌گیرد
+    (مانند transform، translate، scale و overflow).
+
+    بنابراین این Host در ریشه برنامه قرار می‌گیرد تا ActionMenu
+    مستقیماً نسبت به viewport رندر شود.
+
+    سایر کامپوننت‌ها هرگز مستقیماً ActionMenu را ایجاد نمی‌کنند
+    و فقط از ActionMenuService درخواست نمایش ارسال می‌کنند.
+*@
+
+<ActionMenu @ref="_menu" />
+@code {
+    private ActionMenu? _menu;
+
+    /// <summary>
+    /// پس از اولین Render، نمونه ActionMenu توسط @ref ایجاد می‌شود.
+    /// در این مرحله متد Show در سرویس ثبت می‌شود تا سایر کامپوننت‌ها
+    /// بتوانند از هر نقطه برنامه منو را باز کنند.
+    ///
+    /// توجه:
+    /// در OnInitialized مقدار @ref هنوز null است،
+    /// بنابراین ثبت Show باید در OnAfterRender(firstRender)
+    /// انجام شود.
+    /// </summary>
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        MenuService.Show = ShowMenu;
+    }
+
+    private async Task ShowMenu(
+        double x,
+        double y,
+        Dictionary<string, string> items,
+        Func<string, Task> callback)
+    {
+        if (_menu is null)
+            return;
+
+        _menu.Items = items;
+        _menu.OnSelect = EventCallback.Factory.Create<string>(this, callback);
+
+        await _menu.Open(x, y);
+    }
+
+    public void Dispose()
+    {
+        if (ReferenceEquals(MenuService.Show, ShowMenu))
+            MenuService.Show = null;
+    }
+}

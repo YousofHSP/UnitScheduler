@@ -20,6 +20,7 @@ namespace Shared.DTOs
         where TEntity : class, IEntity<TKey>
     {
         [ExcelIgnore]
+        [ListIgnore]
         public  TKey? Id { get; set; }
 
         public TEntity ToEntity(IMapper mapper)

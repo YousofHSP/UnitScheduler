@@ -11,6 +11,14 @@ namespace Common.Utilities
 {
     public static class StringExtensions
     {
+        public static string Start(this string? value, int length = 30)
+        {
+            if (value == null)
+                return "";
+            if (value.Length > length)
+                return value.Substring(0, length) + "...";
+            return value;
+        }
         public static bool HasValue(this string value, bool ignoreWhiteSpace = true)
         {
             return ignoreWhiteSpace ? !string.IsNullOrWhiteSpace(value) : !string.IsNullOrEmpty(value);

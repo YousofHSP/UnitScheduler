@@ -1,0 +1,27 @@
+@page "/University/Index"
+@using global::Shared.DTOs.UniversityDtos
+@using WebClient.Components.Shared
+@inherits WebClient.Components.Shared.IndexBase<UniversityDto, UniversityResDto>
+@rendermode InteractiveServer
+
+
+<IndexLayout
+    T="UniversityResDto"
+    TDto="UniversityDto"
+    PageTitle="استاد"
+    IsLoading="_isLoading"
+    OnSearch="HandleSearch"
+    ControllerName="@ModelName"
+    IndexDto="IndexDto"
+    Data="@Data"
+    ChangeList="Reload"
+    HasCheckbox="false"
+    Sort="IndexDto.Sort"
+    OnSortChanged="HeaderClicked"/>
+
+@code {
+    public UniversityIndex()
+    {
+        ModelName = nameof(University);
+    }
+}

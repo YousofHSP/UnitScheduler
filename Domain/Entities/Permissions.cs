@@ -18,7 +18,23 @@ public static class Permissions
         new() { Controller = "User", Action = "DisableTokens", ControllerLabel = "کاربر", ActionLabel = "غیرفعال کردن توکن" },
         
         new() { Controller = "Sms", Action = "Index", ControllerLabel = "پیام", ActionLabel = "لیست" },
+        
+        new() { Controller = "Course", Action = "Index", ControllerLabel = "درس", ActionLabel = "لیست" },
+        new() { Controller = "Course", ControllerLabel = "درس", Action = "Create",  ActionLabel = "ایجاد" },
+        new() { Controller = "Course", ControllerLabel = "درس", Action = "Update",  ActionLabel = "ویرایش" },
+        new() { Controller = "Course", ControllerLabel = "درس", Action = "Delete", ActionLabel = "حذف" },
 
+        new() { Controller = "Professor", ControllerLabel = "استاد", Action = "Index",  ActionLabel = "لیست" },
+        new() { Controller = "Professor", ControllerLabel = "استاد", Action = "Create",  ActionLabel = "ایجاد" },
+        new() { Controller = "Professor", ControllerLabel = "استاد", Action = "Update",  ActionLabel = "ویرایش" },
+        new() { Controller = "Professor", ControllerLabel = "استاد", Action = "Delete", ActionLabel = "حذف" },
+        
+        new() { Controller = "University", ControllerLabel = "دانشگاه", Action = "Index",  ActionLabel = "لیست" },
+        new() { Controller = "University", ControllerLabel = "دانشگاه", Action = "Create",  ActionLabel = "ایجاد" },
+        new() { Controller = "University", ControllerLabel = "دانشگاه", Action = "Update",  ActionLabel = "ویرایش" },
+        new() { Controller = "University", ControllerLabel = "دانشگاه", Action = "Delete", ActionLabel = "حذف" },
+        
+        new() { Controller = "Assignment", ControllerLabel = "تخصیص‌ها", Action = "Professors", ActionLabel = "اساتید" },
         
         /////////////////////////////////
         

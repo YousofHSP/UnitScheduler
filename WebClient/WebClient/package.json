@@ -18,7 +18,7 @@
     "bpmn-js": "^18.8.0",
     "cally": "^0.8.0",
     "choices.js": "^11.1.0",
-    "daisyui": "^5.1.27",
+    "daisyui": "^5.7.50",
     "postcss": "^8.5.6",
     "tail.select.js": "^1.1.0"
   },

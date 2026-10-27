@@ -1,0 +1,135 @@
+@page "/users-demo"
+@using WebClient.Components.Shared.DataTableComponent
+@rendermode InteractiveServer
+
+<PageTitle>کاربران</PageTitle>
+
+<div class="mx-auto w-full max-w-6xl p-4">
+    <h1 class="mb-4 text-2xl font-bold">کاربران</h1>
+
+    <DataTable @ref="_table" TItem="User" ServerData="LoadUsersAsync" PageSize="10">
+        <ToolbarContent>
+            <button class="btn btn-primary" @onclick='() => _message = "افزودن کاربر"'>+ افزودن</button>
+        </ToolbarContent>
+
+        <Columns>
+            <DataTableColumn TItem="User" Title="شناسه" Field="Id" Sortable Value="u => u.Id" HideOnMobile />
+            <DataTableColumn TItem="User" Title="نام" Field="Name" Sortable Filterable Value="u => u.Name" />
+            <DataTableColumn TItem="User" Title="ایمیل" Field="Email" Sortable Filterable Value="u => u.Email" />
+            <DataTableColumn TItem="User" Title="نقش" Field="Role" Filterable FilterOptions="_roles" Value="u => u.Role" HideOnMobile />
+            <DataTableColumn TItem="User" Title="وضعیت" Field="Status" Filterable FilterOptions="_statuses">
+                <CellTemplate>
+                    <span class="badge @(context.IsActive ? "badge-success" : "badge-ghost")">
+                        @(context.IsActive ? "فعال" : "غیرفعال")
+                    </span>
+                </CellTemplate>
+            </DataTableColumn>
+            <DataTableColumn TItem="User" Title="تاریخ عضویت" Field="CreatedAt" Sortable
+                             Value="@(u => u.CreatedAt.ToString("yyyy-MM-dd"))" HideOnMobile />
+        </Columns>
+
+        <RowActions>
+            <li><button @onclick="() => Edit(context)">ویرایش</button></li>
+            <li><button @onclick="() => ToggleAsync(context)">@(context.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")</button></li>
+            <li><button class="text-error" @onclick="() => DeleteAsync(context)">حذف</button></li>
+        </RowActions>
+    </DataTable>
+
+    @if (_message is not null)
+    {
+        <div class="toast"><div class="alert alert-info"><span>@_message</span></div></div>
+    }
+</div>
+
+@code {
+    private DataTable<User> _table = default!;
+    private string? _message;
+
+    private readonly Dictionary<string, string> _roles = new()
+    {
+        ["Admin"] = "مدیر", ["Editor"] = "ویراستار", ["Viewer"] = "بازدیدکننده"
+    };
+    private readonly Dictionary<string, string> _statuses = new()
+    {
+        ["active"] = "فعال", ["inactive"] = "غیرفعال"
+    };
+
+    // ───── داده‌ی نمونه در حافظه؛ در پروژهٔ واقعی این‌جا از DbContext/Service استفاده کنید ─────
+    private static readonly List<User> _db = Enumerable.Range(1, 237).Select(i => new User
+    {
+        Id = i,
+        Name = $"کاربر {i}",
+        Email = $"user{i}@example.com",
+        Role = new[] { "Admin", "Editor", "Viewer" }[i % 3],
+        IsActive = i % 4 != 0,
+        CreatedAt = DateTime.Today.AddDays(-i * 3)
+    }).ToList();
+
+    private async Task<DataTableResult<User>> LoadUsersAsync(DataTableRequest req, CancellationToken ct)
+    {
+        await Task.Delay(300, ct); // شبیه‌سازی تأخیر شبکه/دیتابیس
+
+        IQueryable<User> q = _db.AsQueryable();
+
+        // جستجوی کلی
+        if (req.Search is { } s)
+            q = q.Where(u => u.Name.Contains(s, StringComparison.OrdinalIgnoreCase)
+                          || u.Email.Contains(s, StringComparison.OrdinalIgnoreCase));
+
+        // فیلترها
+        foreach (var (field, value) in req.Filters)
+        {
+            q = field switch
+            {
+                "Name"   => q.Where(u => u.Name.Contains(value, StringComparison.OrdinalIgnoreCase)),
+                "Email"  => q.Where(u => u.Email.Contains(value, StringComparison.OrdinalIgnoreCase)),
+                "Role"   => q.Where(u => u.Role == value),
+                "Status" => q.Where(u => u.IsActive == (value == "active")),
+                _ => q
+            };
+        }
+
+        var total = q.Count();
+
+        // مرتب‌سازی (فقط فیلدهای مجاز)
+        q = (req.SortBy, req.SortDescending) switch
+        {
+            ("Id", false) => q.OrderBy(u => u.Id),
+            ("Id", true) => q.OrderByDescending(u => u.Id),
+            ("Name", false) => q.OrderBy(u => u.Name),
+            ("Name", true) => q.OrderByDescending(u => u.Name),
+            ("Email", false) => q.OrderBy(u => u.Email),
+            ("Email", true) => q.OrderByDescending(u => u.Email),
+            ("CreatedAt", false) => q.OrderBy(u => u.CreatedAt),
+            ("CreatedAt", true) => q.OrderByDescending(u => u.CreatedAt),
+            _ => q.OrderBy(u => u.Id)
+        };
+
+        var items = q.Skip(req.Skip).Take(req.PageSize).ToList();
+        return new DataTableResult<User> { Items = items, TotalCount = total };
+    }
+
+    private void Edit(User u) => _message = $"ویرایش {u.Name}";
+
+    private async Task ToggleAsync(User u)
+    {
+        u.IsActive = !u.IsActive;
+        await _table.ReloadAsync();
+    }
+
+    private async Task DeleteAsync(User u)
+    {
+        _db.Remove(u);
+        await _table.ReloadAsync();
+    }
+
+    public class User
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Role { get; set; } = "";
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+}

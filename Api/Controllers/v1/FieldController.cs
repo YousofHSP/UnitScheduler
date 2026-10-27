@@ -1,7 +1,9 @@
 ﻿using Asp.Versioning;
 using AutoMapper;
+using Common;
 using Data.Contracts;
 using Domain.Entities;
+using Shared.Attribute;
 using Shared.DTOs;
 using WebFramework.Api;
 

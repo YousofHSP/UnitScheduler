@@ -1,0 +1,59 @@
+﻿@using Common.Utilities
+@using global::Shared.DTOs
+@using WebClient.Services.Common
+@using WebClient.Services.Components
+<!-- ExcelExportButton.razor -->
+<button @onclick="OnClick"
+        title="Export to Excel"
+        class="p-2 bg-transparent border-0 cursor-pointer text-gray-800 hover:text-black">
+    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         class="icon icon-tabler icons-tabler-outline icon-tabler-file-type-xls">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+        <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+        <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" />
+        <path d="M4 15l4 6" />
+        <path d="M4 21l4 -6" />
+        <path d="M17 20.25c0 .414 .336 .75 .75 .75h1.25a1 1 0 0 0 1 -1v-1a1 1 0 0 0 -1 -1h-1a1 1 0 0 1 -1 -1v-1a1 1 0 0 1 1 -1h1.25a.75 .75 0 0 1 .75 .75" />
+        <path d="M11 15v6h3" />
+    </svg>
+</button>
+
+@code {
+    [Parameter] public string ControllerName { get; set; } = "Form";
+    [Parameter] public IndexDto IndexDto { get; set; }
+
+    [Inject] private IJSRuntime Js { get; set; } = default!;
+    [Inject] private ToastService ToastService { get; set; } = default!;
+    [Inject] private IBaseService BaseService { get; set; } = default!;
+
+    private async Task OnClick()
+    {
+        ToastService.ShowSuccess("در حال دانلود فایل اکسل .... شکیبا باشید .....");
+        if (IndexDto is null)
+        {
+            ToastService.ShowError("داده‌ای برای اکسپورت وجود ندارد");
+            return;
+        }
+
+        try
+        {
+            var uri = $"v1/{ControllerName}/ExportToExcel";
+            var bytes = await BaseService.PostFile(uri, IndexDto);
+
+            if (bytes is not null)
+            {
+                var fileName = $"{ControllerName}-{DateTime.Now.ToShamsi().Replace("/", "_").Replace(" ", "_")}.xlsx";
+                await Js.InvokeVoidAsync("downloadFileFromBytes", fileName, bytes);
+            }
+            else
+            {
+                ToastService.ShowError("دانلود فایل با خطا مواجه شد");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"خطا در دانلود فایل: {ex.Message}");
+        }
+    }
+}

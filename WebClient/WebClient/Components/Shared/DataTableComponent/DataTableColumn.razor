@@ -1,0 +1,36 @@
+@typeparam TItem
+@* این کامپوننت چیزی رندر نمی‌کند؛ فقط خودش را به DataTable والد معرفی می‌کند. *@
+
+@code {
+    [CascadingParameter] public DataTable<TItem> Table { get; set; } = default!;
+
+    /// <summary>عنوان هدر ستون.</summary>
+    [Parameter] public string Title { get; set; } = "";
+
+    /// <summary>کلید ستون؛ برای مرتب‌سازی و فیلتر به سرور فرستاده می‌شود.</summary>
+    [Parameter] public string? Field { get; set; }
+
+    /// <summary>اگر CellTemplate ندهید، از این تابع برای نمایش مقدار استفاده می‌شود.</summary>
+    [Parameter] public Func<TItem, object?>? Value { get; set; }
+
+    [Parameter] public RenderFragment<TItem>? CellTemplate { get; set; }
+
+    [Parameter] public bool Sortable { get; set; }
+
+    /// <summary>فعال‌کردن فیلتر برای این ستون (نیاز به Field دارد).</summary>
+    [Parameter] public bool Filterable { get; set; }
+
+    /// <summary>اگر پر باشد فیلتر به‌صورت select نمایش داده می‌شود؛ کلید = مقدار، مقدار = متن.</summary>
+    [Parameter] public IReadOnlyDictionary<string, string>? FilterOptions { get; set; }
+
+    /// <summary>عنوان فیلتر (پیش‌فرض: Title).</summary>
+    [Parameter] public string? FilterLabel { get; set; }
+
+    /// <summary>کلاس اضافه برای سلول‌ها.</summary>
+    [Parameter] public string? CellClass { get; set; }
+
+    /// <summary>ستون در موبایل (کمتر از md) مخفی شود.</summary>
+    [Parameter] public bool HideOnMobile { get; set; }
+
+    protected override void OnInitialized() => Table.AddColumn(this);
+}

@@ -45,6 +45,13 @@ public static class MenuData
         },
         new()
         {
+            Title  = "ترم",
+            Icon = "",
+            Url = "Term/Index",
+            Policy = "Term.Index"
+        },
+        new()
+        {
           Title  = "تخصیص",
           Icon = "",
           Items =

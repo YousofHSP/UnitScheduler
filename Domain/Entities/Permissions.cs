@@ -34,6 +34,11 @@ public static class Permissions
         new() { Controller = "University", ControllerLabel = "دانشگاه", Action = "Update",  ActionLabel = "ویرایش" },
         new() { Controller = "University", ControllerLabel = "دانشگاه", Action = "Delete", ActionLabel = "حذف" },
         
+        new() { Controller = "Term", ControllerLabel = "ترم", Action = "Index",  ActionLabel = "لیست" },
+        new() { Controller = "Term", ControllerLabel = "ترم", Action = "Create",  ActionLabel = "ایجاد" },
+        new() { Controller = "Term", ControllerLabel = "ترم", Action = "Update",  ActionLabel = "ویرایش" },
+        new() { Controller = "Term", ControllerLabel = "ترم", Action = "Delete", ActionLabel = "حذف" },
+        
         new() { Controller = "Assignment", ControllerLabel = "تخصیص‌ها", Action = "Professors", ActionLabel = "اساتید" },
         
         /////////////////////////////////

@@ -1,0 +1,27 @@
+@page "/Term/Index"
+@using global::Shared.DTOs.TermDtos
+@using WebClient.Components.Shared
+@inherits WebClient.Components.Shared.IndexBase<TermDto, TermResDto>
+@rendermode InteractiveServer
+
+
+<IndexLayout
+    T="TermResDto"
+    TDto="TermDto"
+    PageTitle="استاد"
+    IsLoading="_isLoading"
+    OnSearch="HandleSearch"
+    ControllerName="@ModelName"
+    IndexDto="IndexDto"
+    Data="@Data"
+    ChangeList="Reload"
+    HasCheckbox="false"
+    Sort="IndexDto.Sort"
+    OnSortChanged="HeaderClicked"/>
+
+@code {
+    public TermIndex()
+    {
+        ModelName = nameof(Term);
+    }
+}

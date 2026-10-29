@@ -1,11 +1,16 @@
 ﻿@page "/Assignment/Professors"
 @using Common.Utilities
 @using global::Shared.DTOs
+@using global::Shared.DTOs.Engine
+@using WebClient.Components.Shared.DynamicModal
 @using WebClient.Components.Shared.Loadings
 @using WebClient.Services.Common
+@using ScheduleResult = global::Shared.DTOs.Engine.ScheduleResult
 @rendermode InteractiveServer
 
+<DynamicModal ModalTitle="تخصیص" Model="assigneModel" TModel="ScheduleSolveRequest" OnValidSubmit="Assigning"/>
 <div class="p-6">
+    <button type="button" class="btn btn-primary" @onclick="OpenAssignmentModal">تخصیص</button>
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-2xl font-bold text-base-content">لیست دروس اساتید - ترم جاری</h1>
         <div class="badge badge-primary badge-outline p-4">@_allAssignments.Count درس ارائه شده</div>
@@ -13,7 +18,7 @@
 
     @if (_isLoading)
     {
-        <LoadingList />
+        <LoadingList/>
     }
     else if (!_groupedAssignments.Any())
     {
@@ -25,13 +30,13 @@
             @foreach (var kvp in _groupedAssignments)
             {
                 var professorName = kvp.Value.FirstOrDefault()?.ProfessorFullName ?? "استاد نامشخص";
-                
+
                 <div class="card bg-base-100 shadow-xl border border-base-200">
                     <div class="card-body p-5">
                         <h2 class="card-title text-primary border-b pb-2 mb-2">
                             <span class="i-heroicons-user-circle"></span> @professorName
                         </h2>
-                        
+
                         <div class="space-y-3">
                             @foreach (var assignment in kvp.Value)
                             {
@@ -42,8 +47,8 @@
                                     <div class="text-xs opacity-70 mt-1 flex justify-between">
                                         <span>@assignment.TimeSlotDayOfWeek.ToPersian()</span>
                                         <span class="font-mono">
-                                            @assignment.TimeSlotStartTime 
-                                            - 
+                                            @assignment.TimeSlotStartTime
+                                            -
                                             @assignment.TimeSlotEndTime
                                         </span>
                                     </div>
@@ -61,9 +66,11 @@
     private List<AssignmentResDto> _allAssignments = new();
     private Dictionary<long, List<AssignmentResDto>> _groupedAssignments = new();
     private bool _isLoading = true;
+    private ScheduleSolveRequest assigneModel = new();
 
     [Inject] public IBaseService BaseService { get; set; }
-
+    [Inject] public IJSRuntime Js { get; set; }
+    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -90,6 +97,23 @@
         {
             _isLoading = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task OpenAssignmentModal()
+    {
+        await Js.InvokeVoidAsync("openDialog", "dataModal");
+        
+    }
+
+    private async Task Assigning()
+    {
+        var result = await BaseService.Post<ScheduleSolveRequest, ScheduleResult>("v1/CourseSolver/Generate", assigneModel);
+        if (result is not null)
+        {
+            await Js.InvokeVoidAsync("close", "dataModal");
+            await GetData();
+            
         }
     }
 }

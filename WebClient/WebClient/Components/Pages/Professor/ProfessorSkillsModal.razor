@@ -1,0 +1,126 @@
+@using Common
+@using global::Shared.DTOs.ProfessorDtos
+@using WebClient.Services.Common
+
+<dialog id="professorSkillsModal" class="modal">
+    <div class="modal-box w-11/12 max-w-5xl">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute left-2 top-2">✕</button>
+        </form>
+        <h3 class="text-lg font-bold">مهارت‌های استاد @ProfessorDto.FullName</h3>
+        <EditForm Model="Skills" OnValidSubmit="Save">
+            <div class="flex justify-between items-center mb-3 mt-3">
+                <h3 class="font-bold text-lg"></h3>
+                <button type="button" class="btn btn-primary btn-sm" @onclick="AddSkill">
+                    + افزودن مهارت
+                </button>
+            </div>
+
+            @if (!Skills.Any())
+            {
+                <div class="alert">مهارتی ثبت نشده است.</div>
+            }
+
+            @{
+                var ordered = Skills.OrderBy(s => s.Priority).ToList();
+            }
+
+            @foreach (var (skill, index) in ordered.Select((s, i) => (s, i)))
+            {
+                <div class="flex flex-wrap gap-3 items-end p-3 mb-2 border rounded-box" @key="skill">
+                    <div class="form-control w-auto">
+                        <label class="label"><span class="label-text font-medium">درس</span></label>
+                        <select class="select select-bordered w-full" @bind="skill.CourseId">
+                            <option value="0" disabled>انتخاب درس</option>
+                            @foreach (var course in Courses)
+                            {
+                                <option value="@course.Id">@course.Title</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-control w-32">
+                        <label class="label"><span class="label-text font-medium">مهارت</span></label>
+                        <input type="number" class="input input-bordered w-full" @bind="skill.SkillLevel"/>
+                    </div>
+
+                    <div class="form-control w-32">
+                        <label class="label"><span class="label-text font-medium">ترتیب</span></label>
+                        <div class="join">
+                            <button type="button" class="btn btn-sm join-item"
+                                    disabled="@(index == 0)"
+                                    @onclick="() => Move(skill, -1)">▲
+                            </button>
+                            <span class="join-item btn btn-sm btn-disabled">@(index + 1)</span>
+                            <button type="button" class="btn btn-sm join-item"
+                                    disabled="@(index == ordered.Count - 1)"
+                                    @onclick="() => Move(skill, 1)">▼
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-error btn-outline btn-sm" @onclick="() => RemoveSkill(skill)">
+                        حذف
+                    </button>
+                </div>
+            }
+
+            <div class="flex justify-end mt-4">
+                <button type="submit" class="btn btn-primary">ثبت</button>
+            </div>
+        </EditForm>
+    </div>
+</dialog>
+
+@code {
+    [Parameter] public required ProfessorDto ProfessorDto { get; set; }
+    [Parameter] public required List<ProfessorSkillDto> Skills { get; set; } = [];
+    [Parameter] public required List<SelectDto> Courses { get; set; }
+    [Inject] public required IBaseService BaseService { get; set; }
+    [Inject] public required IJSRuntime Js { get; set; }
+
+
+    private async Task Save()
+    {
+        var result = await BaseService.Post<List<ProfessorSkillDto>>($"v1/Professor/{ProfessorDto.Id}/SetSkills", Skills);
+        if (result)
+            await Js.InvokeVoidAsync("close", "professorSkillsModal");
+    }
+
+
+    private void AddSkill()
+    {
+        Skills.Add(new ProfessorSkillDto
+        {
+            ProfessorId = ProfessorDto.Id,
+            Priority = Skills.Count + 1
+        });
+    }
+
+    private void RemoveSkill(ProfessorSkillDto skill)
+    {
+        Skills.Remove(skill);
+        ReindexPriorities(Skills.OrderBy(s => s.Priority).ToList());
+    }
+
+    private void Move(ProfessorSkillDto skill, int direction)
+    {
+        var ordered = Skills.OrderBy(s => s.Priority).ToList();
+        var from = ordered.IndexOf(skill);
+        var to = from + direction;
+
+        if (from < 0 || to < 0 || to >= ordered.Count)
+            return;
+
+        (ordered[from], ordered[to]) = (ordered[to], ordered[from]);
+        ReindexPriorities(ordered);
+    }
+
+// اولویت‌ها را از ۱ تا n بر اساس ترتیب لیست تنظیم می‌کند
+    private static void ReindexPriorities(List<ProfessorSkillDto> ordered)
+    {
+        for (int i = 0; i < ordered.Count; i++)
+            ordered[i].Priority = i + 1;
+    }
+
+}

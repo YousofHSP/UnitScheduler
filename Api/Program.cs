@@ -61,6 +61,8 @@ try
     builder.Services.AddScoped<ScheduleInputBuilder>();
     builder.Services.AddScoped<OrToolsScheduleSolver>();
 
+    builder.Services.AddScoped<IProfessorService, ProfessorService>();
+
 
     builder.Services.AddScoped<IDataInitializer, CityDataInitializer>();
     builder.Services.AddScoped<IDataInitializer, RoleDataInitializer>();
@@ -71,7 +73,7 @@ try
     builder.Services.AddScoped<IDataInitializer, CourseDataInitializer>();
     builder.Services.AddScoped<IDataInitializer, ProfessorDataInitializer>();
     builder.Services.AddScoped<IDataInitializer, TimeSlotDataInitializer>();
-    // builder.Services.AddScoped<IDataInitializer, CourseOfferingDataInitializer>();
+    builder.Services.AddScoped<IDataInitializer, CourseOfferingDataInitializer>();
 
 
 

@@ -110,7 +110,7 @@ namespace Api.Controllers.v1
             return Ok(permissions);
         }
 
-        public override async Task<ApiResult<List<SelectDto>>> GetSelectList(CancellationToken cancellationToken)
+        public override async Task<ApiResult<List<SelectDto>>> GetSelectList(CancellationToken cancellationToken, string titlePropName = "Title")
         {
             var list = await _roleRepository.TableNoTracking
                 .Where(i => i.Name != "Admin")

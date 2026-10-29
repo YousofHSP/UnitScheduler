@@ -1,11 +1,17 @@
 @page "/Professor/Index"
+@using Common
 @using Domain.Entities
 @using global::Shared.DTOs.ProfessorDtos
 @using WebClient.Components.Shared
+@using WebClient.Services.Common
 @inherits WebClient.Components.Shared.IndexBase<ProfessorDto, ProfessorResDto>
 @rendermode InteractiveServer
 
-
+<ProfessorSkillsModal 
+    ProfessorDto="_model" 
+    Skills="_skills" 
+    Courses="_courses"
+    />
 <IndexLayout
     T="ProfessorResDto"
     TDto="ProfessorDto"
@@ -17,6 +23,7 @@
     ControllerName="@ModelName"
     IndexDto="IndexDto"
     Data="@Data"
+    Actions="@(new() {{"edit", "ویرایش"}, {"delete", "حذف"}, {"skills", "مهارت‌ها"}})"
     OnAction="OnRequestListActions"
     ChangeList="Reload"
     HasCheckbox="false"
@@ -26,15 +33,43 @@
 @code {
 
     private ProfessorDto _model = new();
+    [Inject] public new required IBaseService BaseService { get; set; }
+    [Inject] public new required IJSRuntime Js { get; set; }
+    private List<ProfessorSkillDto> _skills = [];
+    private List<SelectDto> _courses = [];
 
     public ProfessorIndex()
     {
         ModelName = nameof(Professor);
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await GetCourses();
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
 
+    private async Task GetCourses()
+    {
+        _courses = [];
+        var result = await BaseService.Get<List<SelectDto>>("v1/Course/GetSelectList");
+        if(result is not null) _courses = result;
+    }
     private async Task OnRequestListActions((string action, string id) arg)
     {
+        if (arg.action == "skills")
+        {
+            var result = await BaseService.Get<ProfessorDto>($"v1/Professor/GetDto/{arg.id}");
+            var skills = await BaseService.Get<List<ProfessorSkillDto>>($"v1/Professor/{arg.id}/GetSkills");
+            if (result is null) return;
+            _model = result;
+            _skills = skills ?? [];
+        
+            await Js.InvokeVoidAsync("openDialog", "professorSkillsModal");
+        }
     }
 
     private async Task ShowCreateModal()

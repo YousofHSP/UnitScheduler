@@ -73,6 +73,7 @@ else
                 await Js.InvokeVoidAsync("openDialog", "dataModal");
                 break;
         }
+        await OnAction.InvokeAsync(data);
     }
 
 

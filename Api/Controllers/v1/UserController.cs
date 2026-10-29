@@ -670,7 +670,7 @@ public class UserController(
     }
 
 
-    public override async Task<ApiResult<List<SelectDto>>> GetSelectList(CancellationToken cancellationToken)
+    public override async Task<ApiResult<List<SelectDto>>> GetSelectList(CancellationToken cancellationToken, string titlePropName = "Title")
     {
         var models = await repository.TableNoTracking.Where(i => i.UserName != "admin")
             .Where(i => !i.Enable)

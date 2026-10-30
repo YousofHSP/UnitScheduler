@@ -1,0 +1,171 @@
+<div dir="ltr" class="inline-block">
+    <label class="input input-bordered flex items-center gap-2 w-36 cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-60" fill="none"
+             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3 2"/>
+        </svg>
+        <input type="text" readonly class="grow w-full text-center font-mono cursor-pointer"
+               value="@Format(Value)" @onclick="Open" disabled="@Disabled"/>
+    </label>
+</div>
+
+@if (_open)
+{
+    <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50" dir="ltr"
+         @onclick="Cancel">
+        <div class="bg-base-100 rounded-box shadow-xl p-5 w-80" @onclick:stopPropagation>
+            <div class="text-center mb-2">
+                <span class="text-4xl font-mono">
+                    <span class="@(_mode == Mode.Hour ? "text-primary" : "opacity-50") cursor-pointer"
+                          @onclick="() => _mode = Mode.Hour">@_h.ToString("00")</span>:<span
+                        class="@(_mode == Mode.Minute ? "text-primary" : "opacity-50") cursor-pointer"
+                        @onclick="() => _mode = Mode.Minute">@_m.ToString("00")</span>
+                </span>
+            </div>
+
+            <svg viewBox="-100 -100 200 200" class="w-64 h-64 mx-auto select-none touch-none"
+                 @onclick="OnFaceClick" @onclick:stopPropagation="false">
+                <circle r="96" class="fill-base-200"/>
+                <circle r="3" class="fill-primary"/>
+                @{
+                    var (hx, hy) = HandPoint();
+                }
+                <line x1="0" y1="0" x2="@F(hx)" y2="@F(hy)" class="stroke-primary" stroke-width="2"/>
+                <circle cx="@F(hx)" cy="@F(hy)" r="14" class="fill-primary"/>
+
+                @if (_mode == Mode.Hour)
+                {
+                    @for (var i = 0; i < 24; i++)
+                    {
+                        var idx = i;
+                        var (x, y) = Pos(idx % 12, 12, idx == 0 || idx > 12 ? 0 : 1);
+                        var sel = idx == _h;
+                        <g @onclick="() => PickHour(idx)" @onclick:stopPropagation class="cursor-pointer">
+                            <circle cx="@F(x)" cy="@F(y)" r="9" fill="transparent"/>
+                            @((MarkupString)$"<text x=\"{F(x)}\" y=\"{F(y)}\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"{(idx == 0 || idx > 12 ? 10 : 12)}\" class=\"{(sel ? "fill-primary-content" : "fill-base-content")}\" pointer-events=\"none\">{(idx == 0 ? "00" : idx.ToString())}</text>")
+                        </g>
+                    }
+                }
+                else
+                {
+                    @for (var i = 0; i < 60; i += 5)
+                    {
+                        var v = i;
+                        var (x, y) = Pos(v / 5, 12, 1);
+                        <g @onclick="() => PickMinute(v)" @onclick:stopPropagation class="cursor-pointer">
+                            <circle cx="@F(x)" cy="@F(y)" r="9" fill="transparent"/>
+                            @((MarkupString)$"<text x=\"{F(x)}\" y=\"{F(y)}\" text-anchor=\"middle\" dominant-baseline=\"central\" font-size=\"12\" class=\"{(v == _m ? "fill-primary-content" : "fill-base-content")}\" pointer-events=\"none\">{v:00}</text>")
+                        </g>
+                    }
+                }
+            </svg>
+
+            <div class="flex items-center justify-center gap-2 mt-3">
+                <input type="number" min="0" max="23" class="input input-bordered input-sm w-20 text-center"
+                       value="@_h" @onchange="OnHourInput"/>
+                <span class="font-bold">:</span>
+                <input type="number" min="0" max="59" class="input input-bordered input-sm w-20 text-center"
+                       value="@_m" @onchange="OnMinuteInput"/>
+            </div>
+
+            <div class="flex justify-between mt-4">
+                <button type="button" class="btn btn-sm btn-ghost" @onclick="Cancel">انصراف</button>
+                <button type="button" class="btn btn-sm btn-primary" @onclick="Confirm">تأیید</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    private enum Mode
+    {
+        Hour,
+        Minute
+    }
+
+    /// <summary>دقیقه از نیمه‌شب (0..1439)</summary>
+    [Parameter]
+    public int Value { get; set; }
+
+    [Parameter] public EventCallback<int> ValueChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private bool _open;
+    private Mode _mode = Mode.Hour;
+    private int _h, _m;
+
+    private static string Format(int v) => $"{v / 60:00}:{v % 60:00}";
+    private static string F(double d) => d.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    private void Open()
+    {
+        if (Disabled) return;
+        _h = Value / 60;
+        _m = Value % 60;
+        _mode = Mode.Hour;
+        _open = true;
+    }
+
+    private void Cancel() => _open = false;
+
+    private async Task Confirm()
+    {
+        _open = false;
+        var v = _h * 60 + _m;
+        if (v != Value)
+        {
+            Value = v;
+            await ValueChanged.InvokeAsync(v);
+        }
+    }
+
+    // موقعیت روی صفحه ساعت: index از 0..11، شعاع بیرونی یا داخلی
+    private static (double x, double y) Pos(int index, int count, int ring)
+    {
+        var r = ring == 0 ? 54 : 78;
+        var a = index * 2 * Math.PI / count - Math.PI / 2;
+        return (r * Math.Cos(a), r * Math.Sin(a));
+    }
+
+    private (double x, double y) HandPoint()
+    {
+        if (_mode == Mode.Hour)
+        {
+            var inner = _h == 0 || _h > 12;
+            return Pos(_h % 12, 12, inner ? 0 : 1);
+        }
+
+        var a = _m * 2 * Math.PI / 60 - Math.PI / 2;
+        return (78 * Math.Cos(a), 78 * Math.Sin(a));
+    }
+
+    private void PickHour(int h)
+    {
+        _h = h;
+        _mode = Mode.Minute;
+    }
+
+    private void PickMinute(int m) => _m = m;
+
+    // کلیک روی هر نقطه از صفحه (دقت یک دقیقه‌ای در حالت دقیقه)
+    private void OnFaceClick(MouseEventArgs e)
+    {
+        if (_mode != Mode.Minute) return;
+        // مختصات نسبی به svg در Blazor بدون JS در دسترس نیست؛ انتخاب با اعداد و input انجام می‌شود
+    }
+
+    private void OnHourInput(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var h))
+            _h = Math.Clamp(h, 0, 23);
+    }
+
+    private void OnMinuteInput(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var m))
+            _m = Math.Clamp(m, 0, 59);
+    }
+
+}

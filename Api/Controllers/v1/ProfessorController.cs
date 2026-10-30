@@ -26,6 +26,12 @@ public class ProfessorController(
         var result = await professorService.GetSkills(id, ct);
         return Ok(result);
     }
+    [HttpGet("{id:long}/[action]")]
+    public async Task<ApiResult<List<ProfessorAvailabilityDto>>> GetAvailabilities([FromRoute] long id, CancellationToken ct)
+    {
+        var result = await professorService.GetAvailabilities(id, ct);
+        return Ok(result);
+    }
 
     [HttpPost("{id:long}/[action]")]
     public async Task<ApiResult> SetSkills(long id, List<ProfessorSkillDto> skillDto, CancellationToken ct)
@@ -35,5 +41,12 @@ public class ProfessorController(
         return Ok();
     }
     
+    [HttpPost("{id:long}/[action]")]
+    public async Task<ApiResult> SetAvailabilities(long id, List<ProfessorAvailabilityDto> dto, CancellationToken ct)
+    {
+        var userId = User.Identity!.GetUserId<long>();
+        await professorService.SetAvailabilities(id,userId, dto, ct);
+        return Ok();
+    }
     
 }

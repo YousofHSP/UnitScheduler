@@ -1,0 +1,138 @@
+@using Common
+@using global::Shared.DTOs.ProfessorDtos
+@using WebClient.Components.Shared
+@using WebClient.Components.Shared.Loadings
+@using WebClient.Services.Common
+
+<dialog id="professorAvailabilitiesModal" class="modal">
+    <div class="modal-box w-11/12 max-w-5xl">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute left-2 top-2">✕</button>
+        </form>
+        <h3 class="text-lg font-bold">زمان‌های استاد @ProfessorDto.FullName</h3>
+        @if (_isLoading)
+        {
+            <LoadingList/>
+        }
+        else
+        {
+            <EditForm Model="_items" OnValidSubmit="Save">
+                <div class="flex justify-between items-center mb-3 mt-3">
+                    <h3 class="font-bold text-lg"></h3>
+                    <button type="button" class="btn btn-primary btn-sm"
+                            @onclick="@(() => _items.Add(new() { ProfessorId = ProfessorDto.Id }))">
+                        + افزودن زمان
+                    </button>
+                </div>
+
+                @if (!_items.Any())
+                {
+                    <div class="alert">زمانی ثبت نشده است.</div>
+                }
+
+                @foreach (var item in _items)
+                {
+                    <div class="flex flex-wrap gap-3 items-end p-3 mb-2 border rounded-box" @key="item">
+                        <div class="form-control w-auto">
+                            <label class="label"><span class="label-text font-medium">دانشگاه</span></label>
+                            <select class="select select-bordered w-full" @bind="item.UniversityId">
+                                <option value="0" disabled>انتخاب دانشگاه</option>
+                                @foreach (var uni in Universities)
+                                {
+                                    <option value="@uni.Id">@uni.Title</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="form-control w-50">
+                            <label class="label"><span class="label-text font-medium">روز هفته</span></label>
+                            <select class="select select-bordered w-full" @bind="item.DayOfWeek">
+                                <option value="@DayOfWeek.Saturday">شنبه</option>
+                                <option value="@DayOfWeek.Sunday">یکشنبه</option>
+                                <option value="@DayOfWeek.Monday">دوشنبه</option>
+                                <option value="@DayOfWeek.Tuesday">سه‌شنبه</option>
+                                <option value="@DayOfWeek.Wednesday">چهارشنبه</option>
+                                <option value="@DayOfWeek.Thursday">پنجشنبه</option>
+                            </select>
+                        </div>
+
+
+                        <div class="flex flex-col gap-1">
+                            <label class="label p-0"><span class="label-text font-medium">ساعت شروع</span></label>
+                            <TimePicker24 @bind-Value="item.StartMinutes" />
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <label class="label p-0"><span class="label-text font-medium">ساعت پایان</span></label>
+                            <TimePicker24 @bind-Value="item.EndMinutes" />
+                        </div>
+
+
+                        <button type="button" class="btn btn-error btn-outline btn-sm"
+                                @onclick="() => _items.Remove(item)">
+                            حذف
+                        </button>
+                    </div>
+                }
+
+                <div class="flex justify-end mt-4">
+                    <button type="submit" class="btn btn-primary">ثبت</button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</dialog>
+
+@code {
+    [Parameter] public required ProfessorDto ProfessorDto { get; set; }
+    private List<ProfessorAvailabilityDto> _items = [];
+    public List<SelectDto> Universities { get; set; } = [];
+    [Inject] public required IBaseService BaseService { get; set; }
+    [Inject] public required IJSRuntime Js { get; set; }
+    private bool _isLoading = true;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await GetUniversities();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await GetItems();
+    }
+
+    private async Task GetItems()
+    {
+        _isLoading = true;
+        _items = [];
+        var result = await BaseService.Get<List<ProfessorAvailabilityDto>>($"v1/Professor/{ProfessorDto.Id}/GetAvailabilities");
+        if (result is not null)
+            _items = result;
+        _isLoading = false;
+    }
+
+    private async Task Save()
+    {
+        var result = await BaseService.Post($"v1/Professor/{ProfessorDto.Id}/SetAvailabilities", _items);
+        if (result)
+            await Js.InvokeVoidAsync("close", "professorAvailabilitiesModal");
+    }
+
+    private async Task GetUniversities()
+    {
+        Universities = [];
+        var result = await BaseService.Get<List<SelectDto>>("v1/University/GetSelectList");
+        if (result is not null)
+            Universities = result;
+    }
+
+
+    private static DateTime ToDateTime(int minutes)
+        => DateTime.Today.AddMinutes(minutes);
+
+    private static int ToMinutes(DateTime value)
+        => value.Hour * 60 + value.Minute;
+
+}

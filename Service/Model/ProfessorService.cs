@@ -10,8 +10,52 @@ namespace Service.Model;
 
 public class ProfessorService(
     IRepository<ProfessorSkill> professorSkillRepository,
+    IRepository<ProfessorAvailability> professorAvailabilityRepository,
     IMapper mapper) : IProfessorService
 {
+    public async Task SetAvailabilities(long professorId, long userId, List<ProfessorAvailabilityDto> dto, CancellationToken ct)
+    {
+        var incoming = dto.Where(s => s.Id != 0).ToDictionary(s => s.Id);
+        var incomingIds = incoming.Keys.ToList();
+
+        await professorAvailabilityRepository.Table
+            .Where(i => i.ProfessorId == professorId)
+            .Where(i => !incomingIds.Contains(i.Id))
+            .ExecuteDeleteAsync(ct);
+
+        var existing = await professorAvailabilityRepository.Table
+            .Where(i => i.ProfessorId == professorId)
+            .ToListAsync(ct);
+
+        foreach (var item in existing)
+        {
+            if (!incoming.TryGetValue(item.Id, out var newDto))
+                continue;
+
+            item.UniversityId = newDto.UniversityId;
+            item.StartMinutes = newDto.StartMinutes;
+            item.EndMinutes = newDto.EndMinutes;
+            item.DayOfWeek = newDto.DayOfWeek;
+        }
+
+        var newItems = dto 
+            .Where(s => s.Id == 0)
+            .Select(newDto => new ProfessorAvailability
+            {
+                ProfessorId = professorId,
+                UniversityId= newDto.UniversityId,
+                StartMinutes= newDto.StartMinutes,
+                EndMinutes= newDto.EndMinutes,
+                DayOfWeek = newDto.DayOfWeek,
+                CreatorUserId = userId
+            })
+            .ToList();
+
+        if (newItems.Count > 0)
+            await professorAvailabilityRepository.AddRangeAsync(newItems, ct);
+
+        await professorAvailabilityRepository.UpdateRangeAsync(existing, ct);        
+    }
 
     public async Task<List<ProfessorSkillDto>> GetSkills(long professorId, CancellationToken ct)
     {
@@ -21,6 +65,16 @@ public class ProfessorService(
             .ToListAsync(ct);
         return result;
     }
+
+    public async Task<List<ProfessorAvailabilityDto>> GetAvailabilities(long professorId, CancellationToken ct)
+    {
+        var result = await professorAvailabilityRepository.TableNoTracking
+            .Where(i => i.ProfessorId == professorId)
+            .ProjectTo<ProfessorAvailabilityDto>(mapper.ConfigurationProvider)
+            .ToListAsync(ct);
+        return result;
+    }
+
     public async Task SetSkills(long professorId, long userId,List<ProfessorSkillDto> skillsDto, CancellationToken ct)
     {
         var incoming = skillsDto.Where(s => s.Id != 0).ToDictionary(s => s.Id);

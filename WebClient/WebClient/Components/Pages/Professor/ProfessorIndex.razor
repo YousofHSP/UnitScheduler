@@ -7,11 +7,13 @@
 @inherits WebClient.Components.Shared.IndexBase<ProfessorDto, ProfessorResDto>
 @rendermode InteractiveServer
 
-<ProfessorSkillsModal 
-    ProfessorDto="_model" 
-    Skills="_skills" 
+<ProfessorSkillsModal
+    ProfessorDto="_model"
+    Skills="_skills"
     Courses="_courses"
-    />
+/>
+<ProfessorAvailabilitiesModal
+    ProfessorDto="_model"/>
 <IndexLayout
     T="ProfessorResDto"
     TDto="ProfessorDto"
@@ -23,7 +25,7 @@
     ControllerName="@ModelName"
     IndexDto="IndexDto"
     Data="@Data"
-    Actions="@(new() {{"edit", "ویرایش"}, {"delete", "حذف"}, {"skills", "مهارت‌ها"}})"
+    Actions="@(new() { { "edit", "ویرایش" }, { "delete", "حذف" }, { "skills", "مهارت‌ها" }, {"availabilities", "زمان‌ها"} })"
     OnAction="OnRequestListActions"
     ChangeList="Reload"
     HasCheckbox="false"
@@ -49,6 +51,7 @@
         {
             await GetCourses();
         }
+
         await base.OnAfterRenderAsync(firstRender);
     }
 
@@ -56,19 +59,24 @@
     {
         _courses = [];
         var result = await BaseService.Get<List<SelectDto>>("v1/Course/GetSelectList");
-        if(result is not null) _courses = result;
+        if (result is not null) _courses = result;
     }
+
     private async Task OnRequestListActions((string action, string id) arg)
     {
+        var result = await BaseService.Get<ProfessorDto>($"v1/Professor/GetDto/{arg.id}");
+        if (result is null) return;
+        _model = result;
         if (arg.action == "skills")
         {
-            var result = await BaseService.Get<ProfessorDto>($"v1/Professor/GetDto/{arg.id}");
             var skills = await BaseService.Get<List<ProfessorSkillDto>>($"v1/Professor/{arg.id}/GetSkills");
-            if (result is null) return;
-            _model = result;
             _skills = skills ?? [];
-        
+
             await Js.InvokeVoidAsync("openDialog", "professorSkillsModal");
+        }
+        else if (arg.action == "availabilities")
+        {
+            await Js.InvokeVoidAsync("openModal", "professorAvailabilitiesModal");
         }
     }
 

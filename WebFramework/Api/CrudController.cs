@@ -215,7 +215,7 @@ public class CrudController<TDto, TResDto, TEntity, TKey>(
     }
     [Display(Name = "لیست انتخابی")]
     [HttpGet("[action]")]
-    public virtual async Task<ApiResult<List<SelectOption>>> GetSelectList2(CancellationToken cancellationToken)
+    public virtual async Task<ApiResult<List<SelectOption>>> GetSelectList2(CancellationToken cancellationToken, string titlePropName = "Title")
     {
         var models = await Repository.TableNoTracking.ToListAsync(cancellationToken);
         var list = models.Select(i =>
@@ -223,7 +223,7 @@ public class CrudController<TDto, TResDto, TEntity, TKey>(
             var id = i.Id;
             string? title = "";
 
-            var titleProp = i.GetType().GetProperty("Title");
+            var titleProp = i.GetType().GetProperty(titlePropName);
             if (titleProp is null) titleProp = i.GetType().GetProperty("Name");
             if (titleProp != null)
             {

@@ -209,7 +209,7 @@ public class CrudController<TDto, TResDto, TEntity, TKey>(
                 title = value?.ToString() ?? "";
             }
 
-            return new SelectDto { Id = id, Title = title };
+            return new SelectDto { Value = id?.ToString() ?? "", Text = title };
         }).ToList();
         return Ok(list);
     }

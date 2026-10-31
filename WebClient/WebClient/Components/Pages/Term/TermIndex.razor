@@ -1,9 +1,11 @@
 @page "/Term/Index"
 @using global::Shared.DTOs.TermDtos
 @using WebClient.Components.Shared
+@using WebClient.Services.Common
 @inherits WebClient.Components.Shared.IndexBase<TermDto, TermResDto>
 @rendermode InteractiveServer
 
+<CourseOfferingModal TermDto="_dto"/>
 
 <IndexLayout
     T="TermResDto"
@@ -17,11 +19,25 @@
     ChangeList="Reload"
     HasCheckbox="false"
     Sort="IndexDto.Sort"
+    Actions="@(new() {{"edit", "ویرایش"}, {"delete", "حذف"}, {"courseOffering", "ارائه دروس"}})"
+    OnAction="OnActions"
     OnSortChanged="HeaderClicked"/>
 
 @code {
+    [Inject] public new required IJSRuntime Js { get; set; }
+    [Inject] public new required IBaseService BaseService { get; set; }
+    private TermDto _dto = new();
     public TermIndex()
     {
         ModelName = nameof(Term);
+    }
+
+    private async Task OnActions((string action, string id, TermDto dto) args)
+    {
+        _dto = args.dto;
+        if (args.action == "courseOffering")
+        {
+            await Js.InvokeVoidAsync("openModal", "courseOfferingModal");
+        }
     }
 }

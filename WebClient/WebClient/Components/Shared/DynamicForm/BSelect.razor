@@ -1,0 +1,305 @@
+@typeparam TValue
+@using System.ComponentModel
+@using System.ComponentModel.DataAnnotations
+@using System.Globalization
+@using System.Reflection
+@using Common
+
+<div class="bs @CssClass @(_open ? "bs-open" : "") @(Disabled ? "bs-disabled" : "")" dir="rtl" style="@(Width is null ? null : $"width:{Width};min-width:{Width};max-width:{Width}")">
+
+    @if (_open)
+    {
+        <div class="bs-backdrop" @onclick="Close"></div>
+    }
+
+    <div class="bs-control" tabindex="@(Disabled ? -1 : 0)" @onclick="Toggle" @onkeydown="OnKeyDown"
+         @onkeydown:preventDefault="_open">
+
+        <div class="bs-value">
+            @if (Multiple)
+            {
+                @if (_selectedKeys.Count == 0)
+                {
+                    <span class="bs-placeholder">@Placeholder</span>
+                }
+                else
+                {
+                    @foreach (var o in _options.Where(x => _selectedKeys.Contains(x.Key)))
+                    {
+                        <span class="bs-chip">
+                            @o.Text
+                            @if (!Disabled)
+                            {
+                                <button type="button" class="bs-chip-x" tabindex="-1"
+                                        @onclick="() => Toggle(o)" @onclick:stopPropagation="true">×</button>
+                            }
+                        </span>
+                    }
+                }
+            }
+            else
+            {
+                var sel = _options.FirstOrDefault(x => _selectedKeys.Contains(x.Key));
+                @if (sel is null)
+                {
+                    <span class="bs-placeholder">@Placeholder</span>
+                }
+                else
+                {
+                    <span class="bs-text">@sel.Text</span>
+                }
+            }
+        </div>
+
+        @if (Clearable && _selectedKeys.Count > 0 && !Disabled)
+        {
+            <button type="button" class="bs-clear" tabindex="-1"
+                    @onclick="ClearAsync" @onclick:stopPropagation="true">×</button>
+        }
+        <span class="bs-arrow"></span>
+    </div>
+
+    @if (_open)
+    {
+        <div class="bs-dropdown">
+            @if (Searchable)
+            {
+                <input @ref="_search" class="bs-search" type="text" autocomplete="off"
+                       placeholder="@SearchPlaceholder"
+                       value="@_term" @oninput="OnSearch" @onkeydown="OnKeyDown"
+                       @onkeydown:preventDefault="_blockKey" />
+            }
+            <ul class="bs-list" role="listbox">
+                @if (_filtered.Count == 0)
+                {
+                    <li class="bs-empty">@NoResultsText</li>
+                }
+                @for (var i = 0; i < _filtered.Count; i++)
+                {
+                    var o = _filtered[i];
+                    var idx = i;
+                    var selected = _selectedKeys.Contains(o.Key);
+                    <li class="bs-item @(selected ? "bs-selected" : "") @(i == _active ? "bs-active" : "") @(o.Disabled ? "bs-item-disabled" : "")"
+                        role="option" aria-selected="@selected"
+                        @onclick="() => Pick(o)" @onmouseover="() => _active = idx">
+                        <span class="bs-check">@(selected ? "✓" : "")</span>
+                        <span>@o.Text</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</div>
+
+@code {
+    // ---------- منبع داده: یکی از این‌ها ----------
+    /// <summary>لیست دستی. اگر null باشد و TValue از نوع enum باشد، از enum ساخته می‌شود.</summary>
+    [Parameter] public IEnumerable<SelectDto>? Items { get; set; }
+
+    // ---------- تک‌انتخابی ----------
+    [Parameter] public TValue? Value { get; set; }
+    [Parameter] public EventCallback<TValue?> ValueChanged { get; set; }
+
+    // ---------- چندانتخابی ----------
+    [Parameter] public bool Multiple { get; set; }
+    [Parameter] public IEnumerable<TValue>? Values { get; set; }
+    [Parameter] public EventCallback<List<TValue>> ValuesChanged { get; set; }
+
+    // ---------- تنظیمات ----------
+    [Parameter] public bool Searchable { get; set; } = true;
+    [Parameter] public bool Clearable { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "انتخاب کنید ...";
+    [Parameter] public string SearchPlaceholder { get; set; } = "جستجو ...";
+    [Parameter] public string NoResultsText { get; set; } = "موردی یافت نشد";
+    [Parameter] public string? CssClass { get; set; }
+
+    /// <summary>اختیاری. اگر null باشد عرض با CssClass (مثلا w-64) تعیین می‌شود.</summary>
+    [Parameter] public string? Width { get; set; }
+
+    private sealed record Opt(string Key, string Text, bool Disabled);
+
+    private List<Opt> _options = new();
+    private List<Opt> _filtered = new();
+    private HashSet<string> _selectedKeys = new();
+    private string _term = "";
+    private bool _open;
+    private bool _blockKey;
+    private int _active;
+    private ElementReference _search;
+    private bool _focusSearch;
+
+    private static Type Core => Nullable.GetUnderlyingType(typeof(TValue)) ?? typeof(TValue);
+
+    // ================= parameters → state =================
+    protected override void OnParametersSet()
+    {
+        BuildOptions();
+        _selectedKeys = Multiple
+            ? (Values ?? Enumerable.Empty<TValue>()).Select(v => ToKey((object?)v)).ToHashSet()
+            : (Value is null ? new HashSet<string>() : new HashSet<string> { ToKey((object?)Value) });
+        ApplyFilter();
+    }
+
+    private void BuildOptions()
+    {
+        if (Items is not null)
+            _options = Items.Select(i => new Opt(i.Value, i.Text, i.Disabled)).ToList();
+        else if (Core.IsEnum)
+            _options = Enum.GetValues(Core).Cast<object>()
+                .Select(e => new Opt(ToKey(e), EnumText(e), false)).ToList();
+        else
+            _options = new();
+    }
+
+    private static string EnumText(object e)
+    {
+        var f = Core.GetField(e.ToString()!);
+        var display = f?.GetCustomAttribute<DisplayAttribute>()?.GetName();
+        if (!string.IsNullOrEmpty(display)) return display;
+        var desc = f?.GetCustomAttribute<DescriptionAttribute>()?.Description;
+        return string.IsNullOrEmpty(desc) ? e.ToString()! : desc;
+    }
+
+    // ================= conversion =================
+    private static string ToKey(object? v) =>
+        v is null ? "" :
+        v is Enum en ? Convert.ToInt64(en, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture) :
+        Convert.ToString(v, CultureInfo.InvariantCulture) ?? "";
+
+    private static TValue? FromKey(string key)
+    {
+        if (Core.IsEnum) return (TValue)Enum.ToObject(Core, Convert.ToInt64(key, CultureInfo.InvariantCulture));
+        if (Core == typeof(Guid)) return (TValue)(object)Guid.Parse(key);
+        return (TValue)Convert.ChangeType(key, Core, CultureInfo.InvariantCulture);
+    }
+
+    // ================= search =================
+    private static string Norm(string s) => s
+        .Replace('ي', 'ی').Replace('ك', 'ک')
+        .Replace('٠', '0').Replace('١', '1').Replace('٢', '2').Replace('٣', '3').Replace('٤', '4')
+        .Replace('٥', '5').Replace('٦', '6').Replace('٧', '7').Replace('٨', '8').Replace('٩', '9')
+        .Replace('۰', '0').Replace('۱', '1').Replace('۲', '2').Replace('۳', '3').Replace('۴', '4')
+        .Replace('۵', '5').Replace('۶', '6').Replace('۷', '7').Replace('۸', '8').Replace('۹', '9')
+        .ToLowerInvariant().Trim();
+
+    private void ApplyFilter()
+    {
+        var t = Norm(_term);
+        _filtered = t.Length == 0
+            ? _options.ToList()
+            : _options.Where(o => Norm(o.Text).Contains(t)).ToList();
+        if (_active >= _filtered.Count) _active = Math.Max(0, _filtered.Count - 1);
+    }
+
+    private void OnSearch(ChangeEventArgs e)
+    {
+        _term = e.Value?.ToString() ?? "";
+        _active = 0;
+        ApplyFilter();
+    }
+
+    // ================= actions =================
+    private void Toggle()
+    {
+        if (Disabled) return;
+        if (_open) { Close(); return; }
+        _open = true;
+        _term = "";
+        ApplyFilter();
+        var first = _filtered.FindIndex(o => _selectedKeys.Contains(o.Key));
+        _active = Math.Max(0, first);
+        _focusSearch = Searchable;
+    }
+
+    private void Close() { _open = false; _term = ""; }
+
+    private async Task Pick(Opt o)
+    {
+        if (o.Disabled) return;
+        if (Multiple)
+        {
+            await Toggle(o);
+            if (Searchable) _focusSearch = true;
+        }
+        else
+        {
+            await SetSingle(o.Key);
+            Close();
+        }
+    }
+
+    private async Task Toggle(Opt o)
+    {
+        if (!_selectedKeys.Remove(o.Key)) _selectedKeys.Add(o.Key);
+        await EmitMulti();
+    }
+
+    private async Task ClearAsync()
+    {
+        _selectedKeys.Clear();
+        if (Multiple) await EmitMulti();
+        else
+        {
+            Value = default;
+            await ValueChanged.InvokeAsync(default);
+        }
+    }
+
+    private async Task SetSingle(string key)
+    {
+        _selectedKeys = new HashSet<string> { key };
+        Value = FromKey(key);
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    private async Task EmitMulti()
+    {
+        // ترتیب خروجی مطابق ترتیب گزینه‌ها
+        var list = _options.Where(o => _selectedKeys.Contains(o.Key))
+                           .Select(o => FromKey(o.Key)!).ToList();
+        Values = list;
+        await ValuesChanged.InvokeAsync(list);
+    }
+
+    // ================= keyboard =================
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        _blockKey = false;
+        if (Disabled) return;
+
+        if (!_open)
+        {
+            if (e.Key is "Enter" or " " or "ArrowDown") Toggle();
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                _blockKey = true;
+                if (_filtered.Count > 0) _active = (_active + 1) % _filtered.Count;
+                break;
+            case "ArrowUp":
+                _blockKey = true;
+                if (_filtered.Count > 0) _active = (_active - 1 + _filtered.Count) % _filtered.Count;
+                break;
+            case "Enter":
+                _blockKey = true;
+                if (_filtered.Count > 0) await Pick(_filtered[_active]);
+                break;
+            case "Escape":
+                Close();
+                break;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusSearch && _open)
+        {
+            _focusSearch = false;
+            await _search.FocusAsync();
+        }
+    }
+}

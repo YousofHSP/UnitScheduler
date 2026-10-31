@@ -62,11 +62,9 @@
         if (result is not null) _courses = result;
     }
 
-    private async Task OnRequestListActions((string action, string id) arg)
+    private async Task OnRequestListActions((string action, string id, ProfessorDto dto) arg)
     {
-        var result = await BaseService.Get<ProfessorDto>($"v1/Professor/GetDto/{arg.id}");
-        if (result is null) return;
-        _model = result;
+        _model = arg.dto;
         if (arg.action == "skills")
         {
             var skills = await BaseService.Get<List<ProfessorSkillDto>>($"v1/Professor/{arg.id}/GetSkills");

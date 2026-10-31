@@ -69,8 +69,8 @@ namespace Common.Utilities
 
             return values.Select(v => new SelectDto
             {
-                Id = Convert.ToInt32(v),
-                Title = (v as Enum)?.ToDisplay() ?? ""
+                Value = $"{v}",
+                Text = (v as Enum)?.ToDisplay() ?? ""
             }).ToList();
         }
 

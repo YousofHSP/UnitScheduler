@@ -1,8 +1,8 @@
 namespace Common;
 
-public class SelectDto(object? id = null, string title = "")
+public class SelectDto(string value = "", string text = "")
 {
-        public object Id { get; set; } = id;
-        public string Title { get; set; } = title;
+        public string Value { get; set; } = value;
+        public string Text { get; set; } = text;
         public bool Disabled { get; set; } = false;
 }

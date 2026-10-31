@@ -22,6 +22,7 @@
     --container-xs: 20rem;
     --container-sm: 24rem;
     --container-md: 28rem;
+    --container-3xl: 48rem;
     --container-5xl: 64rem;
     --container-6xl: 72rem;
     --text-xs: 0.75rem;
@@ -4785,9 +4786,6 @@
       }
     }
   }
-  .m-0 {
-    margin: calc(var(--spacing) * 0);
-  }
   .m-5 {
     margin: calc(var(--spacing) * 5);
   }
@@ -5320,26 +5318,6 @@
   .table-cell {
     display: table-cell;
   }
-  .divider-horizontal {
-    @layer daisyui.l1.l2 {
-      --divider-m: 0 1rem;
-    }
-    &.divider {
-      @layer daisyui.l1.l2 {
-        height: auto;
-        width: calc(0.25rem * 4);
-        flex-direction: column;
-        &:before {
-          height: 100%;
-          width: calc(0.25rem * 0.5);
-        }
-        &:after {
-          height: 100%;
-          width: calc(0.25rem * 0.5);
-        }
-      }
-    }
-  }
   .btn-circle {
     @layer daisyui.l1.l2 {
       border-radius: calc(infinity * 1px);
@@ -5401,9 +5379,6 @@
   .h-full {
     height: 100%;
   }
-  .max-h-40 {
-    max-height: calc(var(--spacing) * 40);
-  }
   .min-h-screen {
     min-height: 100vh;
   }
@@ -5430,6 +5405,9 @@
   }
   .w-5 {
     width: calc(var(--spacing) * 5);
+  }
+  .w-8\/12 {
+    width: calc(8/12 * 100%);
   }
   .w-10 {
     width: calc(var(--spacing) * 10);
@@ -5475,6 +5453,9 @@
   }
   .w-px {
     width: 1px;
+  }
+  .max-w-3xl {
+    max-width: var(--container-3xl);
   }
   .max-w-5xl {
     max-width: var(--container-5xl);
@@ -5574,9 +5555,6 @@
   }
   .grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .grid-cols-4 {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .grid-cols-7 {
     grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -6271,13 +6249,6 @@
       --fontsize: 0.75rem;
       --btn-p: 0.75rem;
       --size: calc(var(--size-field, 0.25rem) * 8);
-    }
-  }
-  .btn-xs {
-    @layer daisyui.l1.l2 {
-      --fontsize: 0.6875rem;
-      --btn-p: 0.5rem;
-      --size: calc(var(--size-field, 0.25rem) * 6);
     }
   }
   .input-error {

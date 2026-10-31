@@ -62,6 +62,7 @@ try
     builder.Services.AddScoped<OrToolsScheduleSolver>();
 
     builder.Services.AddScoped<IProfessorService, ProfessorService>();
+    builder.Services.AddScoped<ITermService, TermService>();
 
 
     builder.Services.AddScoped<IDataInitializer, CityDataInitializer>();

@@ -1,0 +1,18 @@
+.jdp{position:absolute;z-index:9999;width:300px;margin-top:6px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.12);font-family:Vazirmatn,Tahoma,sans-serif;direction:rtl;user-select:none}
+.jdp-header{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.jdp-title{flex:1;display:flex;gap:6px}
+.jdp-sel{flex:1;padding:6px 8px;border:1px solid #d1d5db;border-radius:8px;background:#f9fafb;font:inherit;font-size:14px;cursor:pointer}
+.jdp-btn{width:32px;height:32px;border:0;border-radius:8px;background:#f3f4f6;cursor:pointer;font-size:18px;line-height:1}
+.jdp-btn:hover{background:#e5e7eb}
+.jdp-week,.jdp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.jdp-week{font-size:12px;color:#6b7280;margin-bottom:4px}
+.jdp-day{height:36px;border:0;border-radius:10px;background:transparent;font:inherit;font-size:14px;cursor:pointer;color:#111827}
+.jdp-day:hover:not(:disabled){background:#eef2ff}
+.jdp-day.is-friday{color:#dc2626}
+.jdp-day.is-today{box-shadow:inset 0 0 0 1px #6366f1}
+.jdp-day.is-selected{background:#4f46e5;color:#fff}
+.jdp-day:disabled{color:#d1d5db;cursor:not-allowed}
+.jdp-footer{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid #f3f4f6}
+.jdp-link{border:0;background:none;color:#4f46e5;cursor:pointer;font:inherit;font-size:13px;padding:4px 6px}
+.jdp-link:hover{text-decoration:underline}
+.jdp-day:focus-visible,.jdp-btn:focus-visible,.jdp-sel:focus-visible,.jdp-link:focus-visible{outline:2px solid #6366f1;outline-offset:1px}

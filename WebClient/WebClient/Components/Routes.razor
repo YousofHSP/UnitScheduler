@@ -1,4 +1,4 @@
-﻿@rendermode InteractiveServer
+﻿@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using Microsoft.AspNetCore.Components.Authorization
 <CascadingAuthenticationState>
     <Router AppAssembly="typeof(Program).Assembly">

@@ -15,11 +15,11 @@
 
         <div style="max-height: 200px;" class="overflow-x-auto">
 
-            @foreach (var item in Options.Where(i => MatchesSearch(i.Title)))
+            @foreach (var item in Options.Where(i => MatchesSearch(i.Text)))
             {
                 TValue? itemValue = default;
                 Type underlyingType = Nullable.GetUnderlyingType(typeof(TValue)) ?? typeof(TValue);
-                object rawId = item.Id;
+                object rawId = item.Value;
 
     // اگر مقدار از نوع JsonElement باشه، تبدیلش می‌کنیم
                 if (rawId is JsonElement jsonElement)
@@ -65,7 +65,7 @@
                     <a class="flex justify-between @(isSelected ? "bg-secondary" : "")"
                        @onclick="() => SelectAsync(itemValue)"
                        disabled="@item.Disabled">
-                        <span>@item.Title</span>
+                        <span>@item.Text</span>
                         @if (isSelected)
                         {
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
@@ -112,7 +112,7 @@
         foreach (var item in Options)
         {
             TValue? itemValue = default;
-            object rawId = item.Id;
+            object rawId = item.Value;
 
             if (rawId is JsonElement jsonElement)
             {
@@ -148,7 +148,7 @@
             itemValue = (TValue?)convertedValue;
 
             if (EqualityComparer<TValue>.Default.Equals(itemValue, Value))
-                text = item.Title;
+                text = item.Text;
         }
 
         BtnText = text.Length <= 20 ? text : text[..20] + "...";

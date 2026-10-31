@@ -678,8 +678,8 @@ public class UserController(
             .ToListAsync(cancellationToken);
         return models.Select(i => new SelectDto
         {
-            Id = i.Id,
-            Title = i.Info.FullName
+            Value = i.Id.ToString(),
+            Text = i.Info.FullName
         }).ToList();
     }
 

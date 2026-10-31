@@ -27,7 +27,6 @@ public class CourseDataInitializer(
 {
     public async Task InitializerData()
     {
-        return;
         var filePath = Path.Combine(AppContext.BaseDirectory, "DataInitializer", "Data", "CourseData.json");
         if (!File.Exists(filePath))
         {

@@ -10,14 +10,11 @@
     T="CourseResDto"
     TDto="CourseDto"
     PageTitle="درس"
-    OnDeleteClick="Delete"
     IsLoading="_isLoading"
-    OnCreateClick="ShowCreateModal"
     OnSearch="HandleSearch"
     ControllerName="@ModelName"
     IndexDto="IndexDto"
     Data="@Data"
-    OnAction="OnRequestListActions"
     ChangeList="Reload"
     HasCheckbox="false"
     Sort="IndexDto.Sort"
@@ -33,16 +30,5 @@
     }
 
 
-    private async Task OnRequestListActions((string action, string id) arg)
-    {
-    }
-
-    private async Task ShowCreateModal()
-    {
-    }
-
-    private async Task Delete()
-    {
-    }
 
 }

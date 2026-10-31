@@ -8,8 +8,9 @@
     <base href="/"/>
     <ResourcePreloader/>
     <link rel="stylesheet" href="@Assets["app.css"]"/>
+    <link rel="stylesheet" href="@Assets["css/jalali-datepicker.css"]"/>
     <link rel="stylesheet" href="@Assets["WebClient.styles.css"]"/>
-    <link rel="stylesheet" href="@Assets["lib/jalalidatepicker/jalalidatepicker.min.css"]"/>
+    @* <link rel="stylesheet" href="@Assets["lib/jalalidatepicker/jalalidatepicker.min.css"]"/> *@
     <ImportMap/>
     <link rel="icon" type="image/png" href="favicon.png"/>
     <HeadOutlet/>
@@ -20,7 +21,9 @@
 <ActionMenuHost />
 <ReconnectModal/>
 <script src="@Assets["_framework/blazor.web.js"]"></script>
-<script src="@Assets["lib/jalalidatepicker/jalalidatepicker.min.js"]"></script>
+@* <script src="@Assets["lib/jalalidatepicker/jalalidatepicker.min.js"]"></script> *@
+<script src="@Assets["js/jalali-datepicker.js"]"></script>
+<script src="@Assets["js/jdp-interop.js"]"></script>
 <script src="@Assets["js/app.js"]"></script>
 </body>
 

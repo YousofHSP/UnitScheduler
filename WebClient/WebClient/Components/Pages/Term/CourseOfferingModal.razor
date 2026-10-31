@@ -1,0 +1,122 @@
+@using Common
+@using global::Shared.DTOs.CourseOfferingDtos
+@using global::Shared.DTOs.TermDtos
+@using WebClient.Components.Shared.DynamicForm
+@using WebClient.Components.Shared.Loadings
+@using WebClient.Services.Common
+<dialog id="courseOfferingModal" class="modal">
+
+    <div class="modal-box w-11/12 max-w-5xl">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute left-2 top-2">✕</button>
+        </form>
+        <h3 class="text-lg font-bold">ارائه دروس ترم</h3>
+        @if (_isLoading)
+        {
+            <LoadingList/>
+        }
+        else
+        {
+            <EditForm Model="_data" OnValidSubmit="Save">
+                <div class="flex justify-between items-center mb-3 mt-3">
+                    <h3 class="font-bold text-lg"></h3>
+                    <button type="button" class="btn btn-primary btn-sm"
+                            @onclick="@(() => _data.Add(new() { TermId = TermDto.Id }))">
+                        + افزودن
+                    </button>
+                </div>
+
+                @if (!_data.Any())
+                {
+                    <div class="alert">درسی ارائه نشده</div>
+                }
+
+                @foreach (var item in _data)
+                {
+                    <div class="flex flex-wrap gap-3 items-end p-3 mb-2 border rounded-box" @key="item">
+                        <div class="form-control w-auto">
+                            <label class="label"><span class="label-text font-medium">دانشگاه</span></label>
+                            <BSelect TValue="long" Items="_universities" @bind-Value="item.UniversityId"
+                                     Clearable="true" CssClass="w-64"/>
+                        </div>
+                        <div class="form-control w-auto">
+                            <label class="label"><span class="label-text font-medium">درس</span></label>
+                            <BSelect TValue="long" Items="_courses" @bind-Value="item.CourseId" Clearable="true"
+                                     CssClass="w-64"/>
+                        </div>
+
+                        <div class="form-control w-32">
+                            <label class="label"><span class="label-text font-medium">تعداد دانشجوها</span></label>
+                            <input type="number" class="input input-bordered w-full" @bind="item.StudentCount"/>
+                        </div>
+                        @* <div class="form-control w-32"> *@
+                        @*     <label class="label"><span class="label-text font-medium">تعداد تکرار در هفته</span></label> *@
+                        @*     <input type="number" class="input input-bordered w-full" @bind="item.GroupNumber"/> *@
+                        @* </div> *@
+                        <button type="button" class="btn btn-error btn-outline btn-sm"
+                                @onclick="() => _data.Remove(item)"> حذف
+                        </button>
+                    </div>
+                }
+
+                <div class="flex justify-end mt-4">
+                    <button type="submit" class="btn btn-primary">ثبت</button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</dialog>
+
+@code {
+    [Parameter] public required TermDto TermDto { get; set; }
+    private List<CourseOfferingDto> _data = [];
+    private List<SelectDto> _courses { get; set; }
+    private List<SelectDto> _universities { get; set; } = [];
+    [Inject] public required IBaseService BaseService { get; set; }
+    [Inject] public required IJSRuntime Js { get; set; }
+    private bool _isLoading = true;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await GetCourses();
+            await GetUniversities();
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _data = [];
+        var result = await BaseService.Get<List<CourseOfferingDto>>($"v1/Term/{TermDto.Id}/GetCourseOfferings");
+        if (result is not null)
+            _data = result;
+        _isLoading = false;
+    }
+
+    private async Task GetCourses()
+    {
+        _courses = [];
+        var result = await BaseService.Get<List<SelectDto>>("v1/Course/GetSelectList");
+        if (result is not null)
+            _courses = result;
+    }
+
+    private async Task Save()
+    {
+        var result = await BaseService.Post($"v1/Term/{TermDto.Id}/SetCourseOfferings", _data);
+        if (result)
+            await Js.InvokeVoidAsync("close", "courseOfferingModal");
+    }
+
+    private async Task GetUniversities()
+    {
+        _universities = [];
+        var result = await BaseService.Get<List<SelectDto>>("v1/University/GetSelectList");
+        if (result is not null)
+            _universities = result;
+    }
+
+}

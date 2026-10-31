@@ -45,13 +45,13 @@ public class InputSelectMultiple<TValue> : InputBase<List<TValue>>
 
         foreach (var item in Items)
         {
-            var val = (TValue)Convert.ChangeType(item.Id.ToString(), typeof(TValue));
+            var val = (TValue)Convert.ChangeType(item.Value.ToString(), typeof(TValue));
             builder.OpenElement(seq++, "option");
-            builder.AddAttribute(seq++, "value", item.Id.ToString());
+            builder.AddAttribute(seq++, "value", item.Value.ToString());
             if (CurrentValue.Any(v => cmp.Equals(v, val)))
                 builder.AddAttribute(seq++, "selected", true);
 
-            builder.AddContent(seq++, item.Title);
+            builder.AddContent(seq++, item.Text);
             builder.CloseElement();
         }
 

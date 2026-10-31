@@ -15,14 +15,14 @@
 
         <div style="max-height: 200px;" class="overflow-x-auto">
 
-            @foreach (var item in Options.Where(i => MatchesSearch(i.Title)).ToList())
+            @foreach (var item in Options.Where(i => MatchesSearch(i.Text)).ToList())
             {
                 <li>
 
-                    <a class="flex justify-between" @onclick="e => OnToggle(item.Id, item.Title)"
+                    <a class="flex justify-between" @onclick="e => OnToggle(item.Value, item.Text)"
                        disabled="@item.Disabled">
-                        <span>@item.Title</span>
-                        @if (IsSelected(item.Id))
+                        <span>@item.Text</span>
+                        @if (IsSelected(item.Value))
                         {
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"
                                  class="size-4">
@@ -153,8 +153,8 @@
         else
         {
             var selectedTitles = Options
-                .Where(o => Values.Contains(ConvertToTValue(o.Id)))
-                .Select(o => o.Title)
+                .Where(o => Values.Contains(ConvertToTValue(o.Value)))
+                .Select(o => o.Text)
                 .ToList();
 
             BtnText = string.Join(", ", selectedTitles.Select(t =>

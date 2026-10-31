@@ -115,7 +115,7 @@ namespace Api.Controllers.v1
             var list = await _roleRepository.TableNoTracking
                 .Where(i => i.Name != "Admin")
                 .ToListAsync(cancellationToken);
-            return Ok(list.Select(i => new SelectDto { Id = i.Id, Title = i.Title}).ToList());
+            return Ok(list.Select(i => new SelectDto { Value = i.Id.ToString(), Text = i.Title ?? ""}).ToList());
         }
 
     }

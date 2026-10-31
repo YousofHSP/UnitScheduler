@@ -1,0 +1,58 @@
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<input @ref="_input" id="@Id" class="@CssClass" placeholder="@Placeholder" readonly />
+
+@code {
+    [Parameter] public string Id { get; set; } = $"jdp-{Guid.NewGuid():N}";
+    [Parameter] public string? CssClass { get; set; } = "form-control";
+    [Parameter] public string? Placeholder { get; set; } = "انتخاب تاریخ";
+    [Parameter] public string? Min { get; set; }
+    [Parameter] public string? Max { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    private ElementReference _input;
+    private DotNetObjectReference<JdpComponent>? _ref;
+    private string? _lastValue;
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _ref = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("jdpInterop.create", _input,
+            new { min = Min, max = Max, value = Value }, _ref);
+        _lastValue = Value;
+        _initialized = true;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // اگر والد مقدار را از بیرون عوض کرد، به JS خبر بده
+        if (_initialized && Value != _lastValue)
+        {
+            _lastValue = Value;
+            await JS.InvokeVoidAsync("jdpInterop.setValue", _input, Value);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnPicked(string? value)
+    {
+        _lastValue = value;
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_initialized)
+                await JS.InvokeVoidAsync("jdpInterop.destroy", _input);
+        }
+        catch (JSDisconnectedException) { }
+        _ref?.Dispose();
+    }
+}

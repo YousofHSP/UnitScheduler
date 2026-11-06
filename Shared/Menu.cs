@@ -56,7 +56,8 @@ public static class MenuData
           Icon = "",
           Items =
           {
-              new MenuItem { Url = "Assignment/Professors", Icon = "", Policy = "Assignment.Professors", Title = "اساتید"}
+              new MenuItem { Url = "Assignment/Professors", Icon = "", Policy = "Assignment.Professors", Title = "اساتید"},
+              new MenuItem { Url = "Assignment/FieldSchedule", Icon = "", Policy = "Assignment.FieldSchedule", Title = "مقطع"}
           }
         },
 

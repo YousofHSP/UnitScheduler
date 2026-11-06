@@ -1,7 +1,9 @@
 ﻿@page "/Assignment/Professors"
+@using Common
 @using Common.Utilities
 @using global::Shared.DTOs
 @using global::Shared.DTOs.Engine
+@using WebClient.Components.Shared.DynamicForm
 @using WebClient.Components.Shared.DynamicModal
 @using WebClient.Components.Shared.Loadings
 @using WebClient.Services.Common
@@ -15,10 +17,21 @@
         <h1 class="text-2xl font-bold text-base-content">لیست دروس اساتید - ترم جاری</h1>
         <div class="badge badge-primary badge-outline p-4">@_allAssignments.Count درس ارائه شده</div>
     </div>
+    <div class="form-control w-50 mb-3 mt-3">
+        <label class="label">
+            <span class="label-text font-medium">انتخاب ترم</span>
+        </label>
+        <BSelect Items="_terms" TValue="long" ValueChanged="@(async value => await GetData(value))"></BSelect>
+    </div>
 
     @if (_isLoading)
     {
         <LoadingList/>
+    }
+    else if (_selectedTerm == 0)
+    {
+        <div class="alert alert-warning">لطفا ترم را انتخاب کنید.</div>
+        
     }
     else if (!_groupedAssignments.Any())
     {
@@ -65,26 +78,26 @@
 @code {
     private List<AssignmentResDto> _allAssignments = new();
     private Dictionary<long, List<AssignmentResDto>> _groupedAssignments = new();
-    private bool _isLoading = true;
+    private bool _isLoading = false;
     private ScheduleSolveRequest assigneModel = new();
+    private List<SelectDto> _terms = [];
+    private long _selectedTerm = 0;
 
     [Inject] public IBaseService BaseService { get; set; }
     [Inject] public IJSRuntime Js { get; set; }
     
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (firstRender)
-        {
-            await GetData();
-        }
+        await GetTerms();
     }
 
-    private async Task GetData()
+    private async Task GetData(long selectedTermId)
     {
+        _selectedTerm = selectedTermId;
         _isLoading = true;
         try 
         {
-            var result = await BaseService.Get<List<AssignmentResDto>>("v1/Assignment/Get");
+            var result = await BaseService.Get<List<AssignmentResDto>>($"v1/Assignment/Get?termId={_selectedTerm}");
             if (result is not null)
             {
                 _allAssignments = result;
@@ -100,6 +113,14 @@
         }
     }
 
+    private async Task GetTerms()
+    {
+        _terms = [];
+        var result = await BaseService.Get<List<SelectDto>>("v1/Term/GetSelectList");
+        if (result is not null)
+            _terms = result;
+    }
+
     private async Task OpenAssignmentModal()
     {
         await Js.InvokeVoidAsync("openDialog", "dataModal");
@@ -112,7 +133,7 @@
         if (result is not null)
         {
             await Js.InvokeVoidAsync("close", "dataModal");
-            await GetData();
+            await GetData(_selectedTerm);
             
         }
     }

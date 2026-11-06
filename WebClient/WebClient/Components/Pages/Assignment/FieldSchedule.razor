@@ -1,0 +1,433 @@
+@page "/Assignment/FieldSchedule"
+@using Common
+@using Common.Utilities
+@using global::Shared.DTOs
+@using global::Shared.DTOs.Engine
+@using WebClient.Components.Shared.DynamicForm
+@using WebClient.Components.Shared.Loadings
+@using WebClient.Services.Common
+@rendermode InteractiveServer
+
+<div class="p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-base-content">برنامه هفتگی رشته‌ها و مقاطع</h1>
+        <div class="badge badge-primary badge-outline p-4">@_groups.Count رشته / مقطع</div>
+    </div>
+
+    <div class="form-control w-50 mb-6">
+        <label class="label">
+            <span class="label-text font-medium">انتخاب ترم</span>
+        </label>
+        <BSelect Items="_terms" TValue="long" ValueChanged="@(async value => await GetData(value))"></BSelect>
+    </div>
+
+    @if (_message is not null)
+    {
+        <div class="alert @(_messageIsError ? "alert-error" : "alert-success") mb-6 flex justify-between">
+            <span>@_message</span>
+            <button type="button" class="btn btn-ghost btn-xs" @onclick="@(() => _message = null)">✕</button>
+        </div>
+    }
+
+    @if (_isLoading)
+    {
+        <LoadingList/>
+    }
+    else if (_selectedTerm == 0)
+    {
+        <div class="alert alert-warning">لطفا ترم را انتخاب کنید.</div>
+    }
+    else if (!_groups.Any())
+    {
+        <div class="alert alert-info">داده‌ای برای نمایش یافت نشد.</div>
+    }
+    else
+    {
+        <div class="flex items-center gap-3 mb-4">
+            <button type="button" class="btn btn-primary" disabled="@(!CanSave)" @onclick="SaveChanges">
+                @if (_isSaving)
+                {
+                    <span class="loading loading-spinner loading-sm"></span>
+                }
+                ثبت تغییرات
+            </button>
+            <button type="button" class="btn btn-ghost" disabled="@(_pending.Count == 0 || _isSaving)" @onclick="CancelChanges">
+                لغو تغییرات
+            </button>
+            @if (_pending.Count > 0)
+            {
+                <span class="badge badge-warning p-3">@_pending.Count تغییر ثبت‌نشده</span>
+            }
+        </div>
+
+        @if (_conflictMessages.Any())
+        {
+            <div class="alert alert-error mb-6 flex-col items-start">
+                <div class="font-bold">تداخل زمانی وجود دارد؛ تا رفع تداخل‌ها امکان ثبت نیست:</div>
+                <ul class="list-disc pr-5 text-sm">
+                    @foreach (var m in _conflictMessages)
+                    {
+                        <li>@m</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <div class="space-y-10 @(_isSaving ? "opacity-60 pointer-events-none" : "")">
+            @foreach (var group in _groups)
+            {
+                var days = GetDays(group.Items);
+
+                <div class="card bg-base-100 shadow-xl border border-base-200">
+                    <div class="card-body p-5">
+                        <div class="flex items-center justify-between border-b pb-3 mb-3">
+                            <h2 class="card-title text-primary text-xl">
+                                @group.DegreeLevel - @group.Field
+                            </h2>
+                            <span class="badge badge-secondary badge-outline">@group.Items.Count درس</span>
+                        </div>
+
+                        <div class="overflow-x-auto" dir="rtl">
+                            <table dir="rtl" class="w-full border-separate border-spacing-2 text-center" style="direction: rtl; min-width: @(_slots.Count * 180 + 110)px">
+                                <thead>
+                                    <tr>
+                                        <th class="w-24"></th>
+                                        @foreach (var slot in _slots)
+                                        {
+                                            <th class="bg-primary text-primary-content rounded-lg py-2 px-3 font-mono text-sm">
+                                                @slot.Start
+                                                <span class="opacity-70">تا</span>
+                                                @slot.End
+                                            </th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var day in days)
+                                    {
+                                        <tr>
+                                            <th class="bg-secondary text-secondary-content rounded-lg py-2 px-3 text-sm whitespace-nowrap">
+                                                @DayName(day)
+                                            </th>
+                                            @foreach (var slot in _slots)
+                                            {
+                                                var d = day;
+                                                var s = slot;
+                                                var key = $"{group.DegreeLevel}|{group.Field}|{(int)d}|{s.Start}|{s.End}";
+                                                var isHover = _hoverKey == key;
+                                                var cellItems = group.Items
+                                                    .Where(a => EffDay(a) == d && EffStart(a) == s.Start && EffEnd(a) == s.End)
+                                                    .ToList();
+
+                                                <td class="align-top rounded-lg p-1 transition-colors
+                                                           @(cellItems.Any() ? "" : "bg-base-200/40")
+                                                           @(isHover ? "outline outline-2 outline-primary bg-base-200" : "")"
+                                                    style="height: 90px"
+                                                    @ondragenter="@(() => _hoverKey = key)"
+                                                    @ondragenter:preventDefault="true"
+                                                    @ondragover:preventDefault="true"
+                                                    @ondrop="@(() => OnDrop(group, d, s))"
+                                                    @ondrop:preventDefault="true">
+                                                    @foreach (var item in cellItems)
+                                                    {
+                                                        var current = item;
+                                                        var isConflict = _conflictIds.Contains(current.Id);
+                                                        var isMoved = _pending.ContainsKey(current.Id);
+
+                                                        <div draggable="true"
+                                                             @ondragstart="@(() => OnDragStart(current))"
+                                                             @ondragend="OnDragEnd"
+                                                             class="rounded-lg p-2 mb-1 text-right shadow-sm border border-r-4 hover:shadow-md transition-all cursor-grab active:cursor-grabbing
+                                                                    @(isConflict ? "bg-error/10 border-error border-r-error" : "bg-base-100 border-base-300 border-r-primary hover:bg-base-200")
+                                                                    @(isMoved ? "ring-2 ring-warning" : "")
+                                                                    @(_dragItem == current ? "opacity-40" : "")">
+                                                            <div class="font-bold text-sm leading-6">@item.CourseName</div>
+                                                            <div class="text-xs opacity-60 mt-1">@item.ProfessorFullName</div>
+                                                            @if (isConflict)
+                                                            {
+                                                                <div class="text-xs text-error font-bold mt-1">⚠ تداخل زمانی استاد</div>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private record FieldGroup(string DegreeLevel, string Field, List<AssignmentResDto> Items);
+    private record Slot(string Start, string End);
+    private record Pos(DayOfWeek Day, string Start, string End);
+
+    private List<AssignmentResDto> _all = new();
+    private List<FieldGroup> _groups = new();
+    private List<Slot> _slots = new();
+    private bool _isLoading = false;
+    private bool _isSaving = false;
+    private List<SelectDto> _terms = [];
+    private long _selectedTerm = 0;
+
+    private AssignmentResDto? _dragItem;
+    private string? _hoverKey;
+    private string? _message;
+    private bool _messageIsError;
+
+    // تغییرات ثبت‌نشده: شناسه درس -> موقعیت جدید
+    private Dictionary<long, Pos> _pending = new();
+    private HashSet<long> _conflictIds = new();
+    private List<string> _conflictMessages = new();
+
+    // (روز|شروع|پایان) -> شناسه TimeSlot
+    private Dictionary<string, long> _slotIds = new();
+
+    private bool HasConflicts => _conflictIds.Count > 0;
+    private bool CanSave => _pending.Count > 0 && !HasConflicts && !_isSaving;
+
+    // هفته ایرانی از شنبه شروع می‌شود
+    private static readonly DayOfWeek[] WeekOrder =
+    {
+        DayOfWeek.Saturday, DayOfWeek.Sunday, DayOfWeek.Monday,
+        DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday
+    };
+
+    [Inject] public IBaseService BaseService { get; set; }
+    [Inject] public IJSRuntime Js { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTerms();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // فایرفاکس بدون setData روی dragstart درگ را شروع نمی‌کند
+        if (firstRender)
+        {
+            await Js.InvokeVoidAsync("eval",
+                "if(!window.__dndFix){window.__dndFix=true;" +
+                "document.addEventListener('dragstart',function(e){" +
+                "if(e.dataTransfer){e.dataTransfer.setData('text/plain','drag');e.dataTransfer.effectAllowed='move';}});}");
+        }
+    }
+
+    private async Task GetTerms()
+    {
+        _terms = [];
+        var result = await BaseService.Get<List<SelectDto>>("v1/Term/GetSelectList");
+        if (result is not null)
+            _terms = result;
+    }
+
+    private async Task GetData(long selectedTermId, bool silent = false)
+    {
+        _selectedTerm = selectedTermId;
+        if (!silent)
+            _isLoading = true;
+        try
+        {
+            var result = await BaseService.Get<List<AssignmentResDto>>($"v1/Assignment/Get?termId={_selectedTerm}");
+            _all = result ?? new();
+            _slots = GetSlots(_all);
+            _slotIds = _all
+                .GroupBy(a => SlotKey(ToDay(a), Fmt(a.TimeSlotStartTime), Fmt(a.TimeSlotEndTime)))
+                .ToDictionary(g => g.Key, g => g.First().TimeSlotId);
+            _groups = _all
+                .GroupBy(a => new { a.DegreeLevelTitle, a.FieldTitle })
+                .OrderBy(g => g.Key.DegreeLevelTitle)
+                .ThenBy(g => g.Key.FieldTitle)
+                .Select(g => new FieldGroup(g.Key.DegreeLevelTitle, g.Key.FieldTitle, g.ToList()))
+                .ToList();
+
+            _pending.Clear();
+            RecalculateConflicts();
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // ---------- drag & drop ----------
+
+    private void OnDragStart(AssignmentResDto item)
+    {
+        _dragItem = item;
+        _message = null;
+    }
+
+    private void OnDragEnd()
+    {
+        _dragItem = null;
+        _hoverKey = null;
+    }
+
+    private void OnDrop(FieldGroup group, DayOfWeek day, Slot slot)
+    {
+        var item = _dragItem;
+        _dragItem = null;
+        _hoverKey = null;
+
+        if (item is null || _isSaving)
+            return;
+
+        // فقط داخل جدول همان رشته و مقطع
+        if (item.DegreeLevelTitle != group.DegreeLevel || item.FieldTitle != group.Field)
+        {
+            ShowMessage("درس را فقط داخل جدول همان رشته و مقطع می‌توانید جابه‌جا کنید.", true);
+            return;
+        }
+
+        // همان خانه‌ی فعلی
+        if (EffDay(item) == day && EffStart(item) == slot.Start && EffEnd(item) == slot.End)
+            return;
+
+        // برای این روز و ساعت باید TimeSlot تعریف شده باشد
+        if (!_slotIds.ContainsKey(SlotKey(day, slot.Start, slot.End)))
+        {
+            ShowMessage("برای این روز و ساعت بازه زمانی تعریف نشده است.", true);
+            return;
+        }
+
+        var original = new Pos(ToDay(item), Fmt(item.TimeSlotStartTime), Fmt(item.TimeSlotEndTime));
+        var target = new Pos(day, slot.Start, slot.End);
+
+        // اگر به جای اصلی برگشت، از تغییرات ثبت‌نشده حذف شود
+        if (target == original)
+            _pending.Remove(item.Id);
+        else
+            _pending[item.Id] = target;
+
+        _message = null;
+        RecalculateConflicts();
+    }
+
+    // ---------- pending / conflicts ----------
+
+    private DayOfWeek EffDay(AssignmentResDto a) => _pending.TryGetValue(a.Id, out var p) ? p.Day : ToDay(a);
+    private string EffStart(AssignmentResDto a) => _pending.TryGetValue(a.Id, out var p) ? p.Start : Fmt(a.TimeSlotStartTime);
+    private string EffEnd(AssignmentResDto a) => _pending.TryGetValue(a.Id, out var p) ? p.End : Fmt(a.TimeSlotEndTime);
+
+    // تداخل: یک استاد در یک روز و ساعت بیش از یک درس داشته باشد (در همه‌ی رشته‌ها)
+    private void RecalculateConflicts()
+    {
+        _conflictIds.Clear();
+        _conflictMessages.Clear();
+
+        var clashes = _all
+            .GroupBy(a => new { a.ProfessorId, Day = EffDay(a), Start = EffStart(a), End = EffEnd(a) })
+            .Where(g => g.Count() > 1);
+
+        foreach (var g in clashes)
+        {
+            foreach (var a in g)
+                _conflictIds.Add(a.Id);
+
+            var courses = string.Join(" و ", g.Select(x => $"«{x.CourseName}»"));
+            _conflictMessages.Add($"{g.First().ProfessorFullName}: {courses} در {DayName(g.Key.Day)} {g.Key.Start} تا {g.Key.End}");
+        }
+    }
+
+    private void CancelChanges()
+    {
+        _pending.Clear();
+        _message = null;
+        RecalculateConflicts();
+    }
+
+    private async Task SaveChanges()
+    {
+        if (!CanSave)
+            return;
+
+        _isSaving = true;
+        try
+        {
+            var req = _pending
+                .Select(p => new AssignmentDto
+                {
+                    Id = p.Key,
+                    TimeSlotId = _slotIds[SlotKey(p.Value.Day, p.Value.Start, p.Value.End)]
+                })
+                .ToList();
+
+            var result = await BaseService.Post("v1/Assignment/MoveRange", req);
+
+            if (result)
+            {
+                var count = req.Count;
+                await GetData(_selectedTerm, silent: true); // تغییرات ثبت‌نشده را هم پاک می‌کند
+                ShowMessage($"{count} تغییر ثبت شد.", false);
+            }
+            else
+            {
+                ShowMessage("ثبت تغییرات انجام نشد.", true);
+            }
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void ShowMessage(string text, bool isError)
+    {
+        _message = text;
+        _messageIsError = isError;
+    }
+
+    // ---------- helpers ----------
+
+    private static string SlotKey(DayOfWeek day, string start, string end) => $"{(int)day}|{start}|{end}";
+
+    private static string Fmt(object? time) => time switch
+    {
+        TimeOnly t => t.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture),
+        TimeSpan t => t.ToString(@"hh\:mm"),
+        DateTime t => t.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture),
+        null => "",
+        _ => DateTime.TryParse(time.ToString(), System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var parsed)
+            ? parsed.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)
+            : time.ToString()!
+    };
+
+    private static DayOfWeek ToDay(AssignmentResDto a) => (DayOfWeek)Convert.ToInt32(a.TimeSlotDayOfWeek);
+
+    private static string DayName(DayOfWeek day) => day switch
+    {
+        DayOfWeek.Saturday => "شنبه",
+        DayOfWeek.Sunday => "یکشنبه",
+        DayOfWeek.Monday => "دوشنبه",
+        DayOfWeek.Tuesday => "سه‌شنبه",
+        DayOfWeek.Wednesday => "چهارشنبه",
+        DayOfWeek.Thursday => "پنجشنبه",
+        _ => "جمعه"
+    };
+
+    // پنجشنبه و جمعه فقط اگر درسی داشته باشند نمایش داده می‌شوند
+    private List<DayOfWeek> GetDays(List<AssignmentResDto> items)
+    {
+        var used = items.Select(EffDay).ToHashSet();
+        return WeekOrder
+            .Where(d => (d != DayOfWeek.Thursday && d != DayOfWeek.Friday) || used.Contains(d))
+            .ToList();
+    }
+
+    private static List<Slot> GetSlots(List<AssignmentResDto> items) =>
+        items
+            .Select(a => new Slot(Fmt(a.TimeSlotStartTime), Fmt(a.TimeSlotEndTime)))
+            .Distinct()
+            .OrderBy(s => s.Start)
+            .ThenBy(s => s.End)
+            .ToList();
+}

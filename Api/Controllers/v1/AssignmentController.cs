@@ -21,4 +21,25 @@ public class AssignmentController(IRepository<Assignment> repository, IMapper ma
             .ToListAsync(ct);
         return Ok(result);
     }
+
+    [HttpPost("[action]")]
+    public async Task<ApiResult> MoveRange(List<AssignmentDto> dto, CancellationToken ct)
+    {
+        var models = await repository.Table
+            .Where(i => dto.Select(d => d.Id).Contains(i.Id))
+            .ToListAsync(ct);
+
+        models = models.Select(i =>
+        {
+            var item = dto.FirstOrDefault(j => j.Id == i.Id);
+            if (item is not null)
+            {
+                i.TimeSlotId = item.TimeSlotId;
+            }
+            return i;
+        }).ToList();
+        await repository.UpdateRangeAsync(models, ct);
+
+        return Ok();
+    }
 }

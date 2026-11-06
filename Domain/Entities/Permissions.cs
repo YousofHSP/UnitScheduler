@@ -40,6 +40,7 @@ public static class Permissions
         new() { Controller = "Term", ControllerLabel = "ترم", Action = "Delete", ActionLabel = "حذف" },
         
         new() { Controller = "Assignment", ControllerLabel = "تخصیص‌ها", Action = "Professors", ActionLabel = "اساتید" },
+        new() { Controller = "Assignment", ControllerLabel = "تخصیص‌ها", Action = "FieldSchedule", ActionLabel = "مقطع" },
         
         /////////////////////////////////
         

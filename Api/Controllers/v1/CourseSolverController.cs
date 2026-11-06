@@ -20,6 +20,9 @@ public class CourseSolverController(
         [FromBody] ScheduleSolveRequest request,
         CancellationToken cancellationToken)
     {
+        await assignmentRepository.Table
+            .Where(i => i.CourseOffering.TermId == request.TermId)
+            .ExecuteDeleteAsync(cancellationToken);
         var result = await scheduleGenerationService.GenerateAsync(
             request,
             cancellationToken);

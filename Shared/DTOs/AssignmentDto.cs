@@ -3,9 +3,9 @@ using Domain.Entities;
 
 namespace Shared.DTOs;
 
-public class AssignmentDto
+public class AssignmentDto : BaseDto<AssignmentDto, Assignment>
 {
-    
+    public long TimeSlotId { get; set; }
 }
 
 public class AssignmentResDto : BaseDto<AssignmentResDto, Assignment>
